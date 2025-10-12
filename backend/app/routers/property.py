@@ -3,6 +3,9 @@ from app.services.property_service import (
     get_summary_by_bbl,
     get_deeds_by_bbl,
     get_mortgages_by_bbl,
+    get_permits_by_bbl,
+    get_violations_by_bbl,
+    get_zoning_by_bbl,
 )
 from datetime import datetime, timezone
 
@@ -26,7 +29,21 @@ def summary(bbl: str):
 
 @router.get("/{bbl}/zoning")
 def zoning(bbl: str):
-    return {"base": [], "overlays": [], "sources": []}
+    row = get_zoning_by_bbl(bbl)
+    source = {
+        "name": "ZoLa/DCP",
+        "updated": datetime.now(timezone.utc).isoformat(),
+        "url": "https://zola.planning.nyc.gov",
+    }
+    if not row:
+        return {"base": [], "overlays": [], "sp_districts": [], "far_notes": None, "sources": [source]}
+    return {
+        "base": row.get("base_codes") or [],
+        "overlays": row.get("overlays") or [],
+        "sp_districts": row.get("sp_districts") or [],
+        "far_notes": row.get("far_notes"),
+        "sources": [source],
+    }
 
 @router.get("/{bbl}/deeds")
 def deeds(bbl: str, limit: int = 5):
@@ -50,12 +67,24 @@ def mortgages(bbl: str, limit: int = 5):
 
 @router.get("/{bbl}/permits")
 def permits(bbl: str, since: str | None = None):
-    return {"rows": [], "sources": []}
+    rows = get_permits_by_bbl(bbl, since)
+    source = {
+        "name": "NYC DOB",
+        "updated": datetime.now(timezone.utc).isoformat(),
+        "url": "https://data.cityofnewyork.us",
+    }
+    return {"rows": rows, "sources": [source]}
 
 @router.get("/{bbl}/violations")
 def violations(bbl: str, since: str | None = None):
-    return {"rows": [], "sources": []}
+    rows = get_violations_by_bbl(bbl, since)
+    source = {
+        "name": "NYC DOB",
+        "updated": datetime.now(timezone.utc).isoformat(),
+        "url": "https://data.cityofnewyork.us",
+    }
+    return {"rows": rows, "sources": [source]}
 
 @router.get("/{bbl}/geo")
 def geo(bbl: str):
-    return {"parcel": None, "neighbors": []}
+    return {"parcel": None}

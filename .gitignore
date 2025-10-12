@@ -22,3 +22,6 @@ frontend/.next/
 
 # Docker / misc
 **/.coverage
+# Seeds / local data
+backend/app/db/seeds/*.csv
+data/**/*.csv

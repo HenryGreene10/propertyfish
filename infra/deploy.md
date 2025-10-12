@@ -17,3 +17,9 @@
 - Ingest ACRIS seed: `ACRIS_CSV_PATH=backend/app/db/seeds/acris_sample.csv python backend/etl/acris_ingest.py`.
 - Start API: `uvicorn app.main:app --app-dir backend/app --reload`.
 - Verify: GET `/property/1012700008/deeds` returns seeded rows.
+
+## Sprint C dev bootstrap
+- DOB: `python -m backend.etl.dob_ingest` (or set `DOB_PERMITS_CSV_PATH` / `DOB_VIOLATIONS_CSV_PATH`).
+- Zoning: `python -m backend.etl.zola_ingest` (or set `ZONING_CSV_PATH`).
+- API: `uvicorn app.main:app --app-dir backend/app --reload`.
+- Verify: GET `/property/1012700008/permits`, `/violations`, `/zoning`.

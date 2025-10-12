@@ -1,5 +1,9 @@
+import os, sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
+from backend.app.main import app
+
 from fastapi.testclient import TestClient
-from app.main import app
+from backend.app.main import app
 
 
 def test_summary_200_with_sources(monkeypatch):
@@ -107,3 +111,59 @@ def test_mortgages_endpoint_sorted_and_limited(monkeypatch):
     dates = [row["recorded_at"] for row in rows]
     assert dates == sorted(dates, reverse=True)
     assert all("doc_url" in row and row["doc_url"] for row in rows)
+
+
+def test_permits_endpoint_has_filed_at(monkeypatch):
+    from app.routers import property as property_router
+
+    def fake_get_permits_by_bbl(bbl: str, since: str | None = None):
+        return [
+            {"filed_at": "2025-06-01", "details": {"job_type": "Alteration", "status": "Permit - Issued", "description": "HVAC replacement", "initial_cost": 120000}},
+            {"filed_at": "2024-12-11", "details": {"job_type": "Alteration CO", "status": "Issued", "description": "CO for lobby", "initial_cost": 250000}},
+        ]
+
+    monkeypatch.setattr(property_router, "get_permits_by_bbl", fake_get_permits_by_bbl)
+
+    client = TestClient(app)
+    r = client.get("/property/1012700008/permits")
+    assert r.status_code == 200
+    data = r.json()
+    rows = data.get("rows", [])
+    assert len(rows) >= 1
+    assert "filed_at" in rows[0]
+
+
+def test_violations_endpoint_has_issued_at(monkeypatch):
+    from app.routers import property as property_router
+
+    def fake_get_violations_by_bbl(bbl: str, since: str | None = None):
+        return [
+            {"issued_at": "2025-01-22", "details": {"code": "DOB-YY", "status": "Open", "description": "Guardrail not to code"}},
+            {"issued_at": "2024-10-18", "details": {"code": "ECB-XX", "status": "Resolved", "description": "Boiler violation resolved"}},
+        ]
+
+    monkeypatch.setattr(property_router, "get_violations_by_bbl", fake_get_violations_by_bbl)
+
+    client = TestClient(app)
+    r = client.get("/property/1012700008/violations")
+    assert r.status_code == 200
+    data = r.json()
+    rows = data.get("rows", [])
+    assert len(rows) >= 1
+    assert "issued_at" in rows[0]
+
+
+def test_zoning_endpoint_has_base_codes(monkeypatch):
+    from app.routers import property as property_router
+
+    def fake_get_zoning_by_bbl(bbl: str):
+        return {"base_codes": ["C5-3"], "overlays": ["Special Midtown District"], "sp_districts": ["SP-MID"], "far_notes": "See §81-00 et seq"}
+
+    monkeypatch.setattr(property_router, "get_zoning_by_bbl", fake_get_zoning_by_bbl)
+
+    client = TestClient(app)
+    r = client.get("/property/1012700008/zoning")
+    assert r.status_code == 200
+    data = r.json()
+    assert isinstance(data.get("base", []), list)
+    assert len(data.get("base", [])) >= 1

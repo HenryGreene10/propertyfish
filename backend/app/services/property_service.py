@@ -65,3 +65,55 @@ def get_mortgages_by_bbl(bbl: str, limit: int) -> List[Dict[str, Any]]:
         cur.execute(sql, (bbl, limit))
         rows = cur.fetchall() or []
         return [dict(r) for r in rows]
+
+
+def get_permits_by_bbl(bbl: str, since: str | None = None) -> List[Dict[str, Any]]:
+    base_sql = (
+        """
+        SELECT filed_at, details
+        FROM permits_violations
+        WHERE bbl=%s AND kind='permit'
+        """
+    )
+    params: List[Any] = [bbl]
+    if since:
+        base_sql += " AND filed_at >= %s"
+        params.append(since)
+    base_sql += " ORDER BY filed_at DESC"
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(base_sql, tuple(params))
+        rows = cur.fetchall() or []
+        return [dict(r) for r in rows]
+
+
+def get_violations_by_bbl(bbl: str, since: str | None = None) -> List[Dict[str, Any]]:
+    # issued_at stored in filed_at; alias on select
+    base_sql = (
+        """
+        SELECT filed_at AS issued_at, details
+        FROM permits_violations
+        WHERE bbl=%s AND kind='violation'
+        """
+    )
+    params: List[Any] = [bbl]
+    if since:
+        base_sql += " AND filed_at >= %s"
+        params.append(since)
+    base_sql += " ORDER BY filed_at DESC"
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(base_sql, tuple(params))
+        rows = cur.fetchall() or []
+        return [dict(r) for r in rows]
+
+
+def get_zoning_by_bbl(bbl: str) -> Optional[Dict[str, Any]]:
+    sql = (
+        """
+        SELECT base_codes, overlays, sp_districts, far_notes, last_updated
+        FROM zoning_layers WHERE bbl=%s LIMIT 1
+        """
+    )
+    with get_conn() as conn, conn.cursor() as cur:
+        cur.execute(sql, (bbl,))
+        row = cur.fetchone()
+        return dict(row) if row else None
