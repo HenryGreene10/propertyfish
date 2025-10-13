@@ -25,3 +25,31 @@ frontend/.next/
 # Seeds / local data
 backend/app/db/seeds/*.csv
 data/**/*.csv
+ 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Coverage / build
+.coverage
+coverage.xml
+dist/
+build/
+
+# Editors/OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Env & local config
+.env
+.env.*
+!.env.sample
+
+# Logs (keep activity log md)
+logs/*.log
+!logs/ACTIVITY_LOG.md

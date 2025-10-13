@@ -147,6 +147,54 @@ _Convention: Every time Codex modifies the repository, append an entry:_
 
 ---
 
+- **Timestamp (UTC)**: 2025-10-12T15:18:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add CORS + health/version endpoints; trim chat debug SQL in prod.
+- **Files changed**: backend/app/main.py, backend/app/routes.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Enable cross-origin calls for local tools, basic health/version reporting, and limit debug payload size in production.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:20:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Update frontend chat.html with improved UI and POST to /api/chat/query.
+- **Files changed**: frontend/chat.html
+- **Notes/Reasons**: Single-page JSON viewer for chat endpoint to aid manual testing and demos.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:22:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add API misc tests for health and chat contract.
+- **Files changed**: backend/tests/test_api_misc.py
+- **Notes/Reasons**: Ensures health endpoint returns ok and chat endpoint exposes minimal contract fields.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:24:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add global pytest AsyncClient fixture in conftest and align chat tests.
+- **Files changed**: backend/tests/conftest.py, backend/tests/test_chat_query.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Provides a shared app_client fixture for async tests; removes duplicate local fixture to avoid conflicts.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:26:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Switch test client to ASGITransport for speed/stability.
+- **Files changed**: backend/tests/conftest.py
+- **Notes/Reasons**: Uses httpx.ASGITransport to avoid network stack; faster async tests and consistent behavior.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:28:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add .gitattributes and append safe ignores to .gitignore.
+- **Files changed**: .gitattributes, .gitignore, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Normalize line endings (LF for code, CRLF for PowerShell) and extend ignores while preserving the activity log.
+
+---
+
 - **Timestamp (UTC)**: 2025-10-12T14:15:00Z
 - **Author/Agent**: Codex
 - **Prompt (summary)**: Add pytest.ini at repo root to set pythonpath.

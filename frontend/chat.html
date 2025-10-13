@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8"/>
+<title>PropertyFish Chat (Sprint D)</title>
+<style>
+  body { font: 14px system-ui, sans-serif; margin: 24px; max-width: 900px; }
+  #out { white-space: pre-wrap; background:#0b1020; color:#e6eefc; padding:16px; border-radius:10px; }
+  .row { display:flex; gap:8px; }
+  input, button { font: 14px inherit; padding:10px; }
+  input { flex:1; border:1px solid #ccc; border-radius:8px; }
+  button { border:0; border-radius:8px; padding-inline:16px; background:#1f6feb; color:white; }
+  .meta { color:#666; margin:8px 0 0; }
+</style>
+<div class="row">
+  <input id="q" placeholder="Ask: e.g. show permits for 1000000001 or violations at 123 MAIN ST NY?"/>
+  <button id="go">Ask</button>
+</div>
+<div class="meta">POST → <code>/api/chat/query</code></div>
+<h3>Answer bundle</h3>
+<pre id="out">{}</pre>
+<script>
+const $ = (s)=>document.querySelector(s);
+async function ask() {
+  const body = { question: $("#q").value.trim() };
+  const res = await fetch("/api/chat/query", {
+    method:"POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(body)
+  });
+  const j = await res.json();
+  // Pretty-print and highlight summary + citations
+  const pretty = JSON.stringify(j, null, 2)
+    .replace(/"summary":\s*"([^"]*)"/, (_,s)=>`"summary": "${s}"`);
+  $("#out").textContent = pretty;
+}
+$("#go").onclick = ask;
+$("#q").addEventListener("keydown", e=>{ if(e.key==="Enter") ask(); });
+</script>

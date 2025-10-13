@@ -23,3 +23,9 @@
 - Zoning: `python -m backend.etl.zola_ingest` (or set `ZONING_CSV_PATH`).
 - API: `uvicorn app.main:app --app-dir backend/app --reload`.
 - Verify: GET `/property/1012700008/permits`, `/violations`, `/zoning`.
+
+## Sprint D dev bootstrap
+- Ensure venv active and DB running.
+- Tests: `pytest -q`.
+- API: `uvicorn app.main:app --app-dir backend/app --reload`.
+- Chat: POST `/api/chat/query` with `{ "question": "Permits for BBL 1012700008" }` or open `frontend/chat.html` and try queries.

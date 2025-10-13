@@ -1,15 +1,21 @@
 version: "3.8"
 services:
   db:
-    image: postgis/postgis:15-3.4
+    image: postgres:16
+    container_name: propertyfish-postgres
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: propertyfish
-    ports: ["5432:5432"]
-  api:
-    build: ../backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@db:5432/propertyfish
-    ports: ["8000:8000"]
-    depends_on: [db]
+      POSTGRES_USER: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d propertyfish"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata: {}
