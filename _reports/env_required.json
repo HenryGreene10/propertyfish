@@ -1,0 +1,114 @@
+{
+  "DATABASE_URL": {
+    "locations": [
+      "backend/run_ingestion.py:15",
+      "backend/app/db/connection.py:16",
+      "backend/app/services/chat.py:34",
+      "backend/app/ingestion/orchestrator.py:18"
+    ],
+    "notes": "Postgres DSN required for backend services and ingestion"
+  },
+  "ENV": {
+    "locations": [
+      "backend/app/main.py:29",
+      "backend/app/routes.py:12"
+    ],
+    "notes": "Controls FastAPI environment-specific behavior"
+  },
+  "ACRIS_CSV_PATH": {
+    "locations": ["backend/etl/acris_ingest.py:37"],
+    "notes": "Optional override for local ACRIS seed ingest"
+  },
+  "DOB_PERMITS_CSV_PATH": {
+    "locations": ["backend/etl/dob_ingest.py:20"],
+    "notes": "Optional path for DOB permits seed ingest"
+  },
+  "DOB_VIOLATIONS_CSV_PATH": {
+    "locations": ["backend/etl/dob_ingest.py:70"],
+    "notes": "Optional path for DOB violations seed ingest"
+  },
+  "ZONING_CSV_PATH": {
+    "locations": ["backend/etl/zola_ingest.py:26"],
+    "notes": "Optional path for zoning seed ingest"
+  },
+  "PLUTO_CSV_PATH": {
+    "locations": ["backend/etl/pluto_ingest.py:26"],
+    "notes": "Legacy PLUTO ingest seed path"
+  },
+  "PLUTO_URL": {
+    "locations": ["backend/app/ingestion/pluto.py:35"],
+    "notes": "Download URL for citywide MapPLUTO ZIP"
+  },
+  "USE_BBL_AS_PK": {
+    "locations": ["backend/app/ingestion/pluto.py:62"],
+    "notes": "Toggle to treat BBL as primary key during PLUTO ingest"
+  },
+  "NYC_SOCRATA_BASE": {
+    "locations": ["backend/app/ingestion/common.py:16"],
+    "notes": "Base URL for Socrata API"
+  },
+  "NYC_SOCRATA_APP_TOKEN": {
+    "locations": ["backend/app/ingestion/common.py:17"],
+    "notes": "Socrata app token for rate-limited datasets"
+  },
+  "POLITE_MIN_SLEEP_MS": {
+    "locations": ["backend/app/ingestion/framework.py:41"],
+    "notes": "Lower bound for ingestion politeness delay"
+  },
+  "POLITE_MAX_SLEEP_MS": {
+    "locations": ["backend/app/ingestion/framework.py:42"],
+    "notes": "Upper bound for ingestion politeness delay"
+  },
+  "DOB_PERMITS_RESOURCE_ID": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Socrata resource id for DOB permits datasets"
+  },
+  "PERMITS_DATE_FIELD": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Override date field for permits ingest"
+  },
+  "DOB_VIOL_RESOURCE_ID": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Socrata resource id for DOB violations"
+  },
+  "DOB_VIOL_DATE_FIELD": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Date field override for DOB violations ingest"
+  },
+  "HPD_VIOL_RESOURCE_ID": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "HPD violations dataset id"
+  },
+  "HPD_VIOL_DATE_FIELD": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Date field override for HPD violations"
+  },
+  "HPD_REG_RESOURCE_ID": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "HPD registrations dataset id"
+  },
+  "HPD_REG_DATE_FIELD": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Date field override for HPD registrations"
+  },
+  "ACRIS_LEGAL_RESOURCE_ID": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "ACRIS legal dataset id"
+  },
+  "ACRIS_LEGAL_DATE_FIELD": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Date field override for ACRIS legal ingest"
+  },
+  "ACRIS_MTG_RESOURCE_ID": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "ACRIS mortgage dataset id"
+  },
+  "ACRIS_MTG_DATE_FIELD": {
+    "locations": ["backend/app/ingestion/catalog.yml"],
+    "notes": "Date field override for ACRIS mortgage ingest"
+  },
+  "NEXT_PUBLIC_API_BASE": {
+    "locations": ["frontend/app/api.ts:2"],
+    "notes": "Frontend fetch base URL"
+  }
+}

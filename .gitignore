@@ -1,55 +1,75 @@
-# Python
-.venv/
-**/__pycache__
-*.pyc
-.pytest_cache/
-dist/
-build/
-
-# Node / Next
+# Node
+node_modules/
 frontend/node_modules/
 frontend/.next/
+frontend/.vite/
+.next/
+.expo/
+dist/
+build/
 *.log
+!_reports/logs/*.log
+coverage/
 
-# Local env & OS junk
-.env
-.env.*
-.DS_Store
-
-# IDE
-.vscode/
-.idea/
-
-# Docker / misc
-**/.coverage
-# Seeds / local data
-backend/app/db/seeds/*.csv
-data/**/*.csv
- 
 # Python
+.venv/
+venv/
+backend/.venv/
 __pycache__/
+**/__pycache__
 *.pyc
 *.pyo
 *.pyd
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Coverage / build
-.coverage
-coverage.xml
-dist/
-build/
-
-# Editors/OS
-.vscode/
-.idea/
+# OS / Editors
 .DS_Store
 Thumbs.db
+.vscode/
+.idea/
 
-# Env & local config
+# Cache / Artifacts
+cache/
+_cache/
+.tmp/
+.temp/
+*.tmp
+**/uploads/**
+**/output/**
+**/generated/**
+/backend/cache/
+/frontend/.vite/
+/graded-pdfs/
+/submissions/
+/cache_audio/
+/cache_pdf/
+
+# Env & Secrets
 .env
 .env.*
-!.env.sample
+.env.local
+.env.development
+.env.production
+*.env
+*.env.*
+!*.env.sample
+!*.env.example
+!**/.env.sample
+!**/.env.example
+backend/.env
+.supabase/*
+secrets.json
 
 # Logs (keep activity log md)
 logs/*.log
 !logs/ACTIVITY_LOG.md
+
+# Coverage / build
+.coverage
+coverage.xml
+
+# Seeds / local data
+backend/app/db/seeds/*.csv
+data/**/*.csv
