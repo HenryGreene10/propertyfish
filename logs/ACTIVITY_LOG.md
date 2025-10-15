@@ -200,3 +200,11636 @@ _Convention: Every time Codex modifies the repository, append an entry:_
 - **Prompt (summary)**: Add pytest.ini at repo root to set pythonpath.
 - **Files changed**: pytest.ini, logs/ACTIVITY_LOG.md
 - **Notes/Reasons**: Ensure pytest discovers backend app by adding `backend` to pythonpath for tests.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:40:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add ingestion orchestrator and CLI runner with absolute imports.
+- **Files changed**: backend/app/ingestion/orchestrator.py, backend/run_ingestion.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Create minimal entrypoints that read DATABASE_URL and dispatch the dob_permits job; document the change.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:45:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Implement shared Socrata ingestion utilities.
+- **Files changed**: backend/app/ingestion/common.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Provide hashing, BBL normalization, Socrata fetch with retries, and staging insert helper for ingestion jobs.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:50:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Implement DOB permits ingestion with resilient Socrata handling.
+- **Files changed**: backend/app/ingestion/dob_permits.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Auto-detect date field, paginate recent rows, stage payloads, normalize and upsert permits, and refresh materialized view.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T15:55:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add ingestion stubs for remaining NYC datasets.
+- **Files changed**: backend/app/ingestion/dob_violations.py, backend/app/ingestion/acris.py, backend/app/ingestion/zoning_pluto.py, backend/app/ingestion/dof_tax.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Provide placeholder run() functions so absolute imports resolve while full ingestion logic is pending.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-12T16:00:00Z
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Align pytest discovery and ingestion env defaults.
+- **Files changed**: pytest.ini, backend/.env.example, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Ensure pytest pythonpath config and document required ingestion environment variables for local runs.
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-14T16:04:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add activity log helper
+- **Files changed**: backend/app/utils/activity_log.py
+- **Notes/Reasons**: Helper ensures consistent timestamped entries.
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-14T17:19:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Add catalog + generic runner + watermarks
+- **Files changed**: backend/app/utils/activity_log.py, backend/app/ingestion/catalog.yml, backend/app/ingestion/normalizers.py, backend/app/ingestion/framework.py, backend/app/ingestion/orchestrator.py, backend/app/ingestion/dob_permits.py, backend/app/ingestion/common.py, backend/app/db/schema.sql, backend/.env.example, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Polite paging & retries; days_back windowing; REFRESH MV option.
+
+---
+
+- **Timestamp (UTC)**: 2025-10-14T17:28:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Harden ingestion watermarks and PyYAML guard
+- **Files changed**: backend/app/db/schema.sql, backend/app/ingestion/framework.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Ensure watermarks table is created both in schema and at runtime; provide friendly guidance when PyYAML is missing.
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-14T18:11:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Harden ingestion watermarks & PyYAML guard
+- **Files changed**: backend/app/db/schema.sql, backend/app/ingestion/framework.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Ensure schema & runtime safety, raise helpful message when PyYAML missing.
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-14T20:13:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Implement PLUTO ingestion + property resolver
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/ingestion/normalizers.py, backend/app/utils/resolve.py, backend/app/routers/property.py, backend/app/services/property_service.py, backend/app/db/schema.sql, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: PLUTO normalization, address→BBL lookup, DOB permit endpoint uses canonical data.
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-14T20:36:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Enhance PLUTO ingestion autodiscovery
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/ingestion/orchestrator.py, backend/app/utils/resolve.py, backend/app/db/schema.sql, backend/.env.example, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: Auto-resolve MapPLUTO URL (GitHub & Bytes), staging ingest, dry-run support.
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-14T21:29:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: Added PLUTO ingest and address resolver
+- **Files changed**: backend/app/db/schema.sql, backend/app/ingestion/normalizers.py, backend/app/ingestion/pluto.py, backend/app/ingestion/orchestrator.py, backend/app/utils/resolve.py, backend/app/services/property_service.py, backend/app/routers/property.py, backend/app/main.py, logs/ACTIVITY_LOG.md
+- **Notes/Reasons**: PLUTO autodiscovered URL: auto-detected via GitHub/Bytes fallback; new /api/property routes and legacy compatibility.
+
+2025-10-14 — PLUTO 25v2.1 ingest: accept house/housenum→houseno, stname→street; robust aliasing + logging; fixed raw connection for batching.
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T00:58:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql, backend/app/ingestion/normalizers.py
+- **Notes/Reasons**: {"dry_run": true, "step": "start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T00:58:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql, backend/app/ingestion/normalizers.py
+- **Notes/Reasons**: {"csv_member": "pluto_25v2_1.csv", "step": "downloaded", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T00:59:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql, backend/app/ingestion/normalizers.py
+- **Notes/Reasons**: {"dry_run": false, "step": "start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T00:59:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql, backend/app/ingestion/normalizers.py
+- **Notes/Reasons**: {"csv_member": "pluto_25v2_1.csv", "step": "downloaded", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:08:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"dry_run": true, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:08:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"csv_member": "pluto_25v2_1.csv", "event": "pluto_zip_ready", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:09:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"dry_run": false, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:09:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"csv_member": "pluto_25v2_1.csv", "event": "pluto_zip_ready", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:18:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"dry_run": true, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:18:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"csv_member": "pluto_25v2_1.csv", "event": "pluto_zip_ready", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:18:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"dry_run": false, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:18:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"csv_member": "pluto_25v2_1.csv", "event": "pluto_zip_ready", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T01:53:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py, backend/app/db/schema.sql
+- **Notes/Reasons**: {"dry_run": true, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:07:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"dry_run": true, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:07:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "pluto_zip_member", "member": "pluto_25v2_1.csv"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:07:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "pluto_headers", "headers": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council"]}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:08:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"dry_run": false, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:08:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "pluto_zip_member", "member": "pluto_25v2_1.csv"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:08:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "pluto_headers", "headers": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council"]}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"dry_run": true, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "pluto_zip_member", "member": "pluto_25v2_1.csv"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"canonical": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council", "zipcode", "firecomp", "policeprct", "healthcenterdistrict", "healtharea", "sanitboro", "sanitdistrict", "sanitsub", "address", "zonedist1", "zonedist2", "zonedist3", "zonedist4", "overlay1", "overlay2", "spdist1", "spdist2", "spdist3", "ltdheight", "splitzone", "bldgclass", "landuse", "easements", "ownertype", "ownername", "lotarea", "bldgarea", "comarea", "resarea", "officearea", "retailarea", "garagearea", "strgearea", "factryarea", "otherarea", "areasource", "numbldgs", "numfloors", "unitsres", "unitstotal", "lotfront", "lotdepth", "bldgfront", "bldgdepth", "ext", "proxcode", "irrlotcode", "lottype", "bsmtcode", "assessland", "assesstot", "exempttot", "yearbuilt", "yearalter1", "yearalter2", "histdist", "landmark", "builtfar", "residfar", "commfar", "facilfar", "borocode", "bbl", "condono", "tract2010", "xcoord", "ycoord", "zonemap", "zmcode", "sanborn", "taxmap", "edesignum", "appbbl", "appdate", "plutomapid", "firm07_flag", "pfirm15_flag", "version", "dcpedited", "latitude", "longitude", "notes"], "event": "pluto_headers", "raw": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council", "zipcode", "firecomp", "policeprct", "healthcenterdistrict", "healtharea", "sanitboro", "sanitdistrict", "sanitsub", "address", "zonedist1", "zonedist2", "zonedist3", "zonedist4", "overlay1", "overlay2", "spdist1", "spdist2", "spdist3", "ltdheight", "splitzone", "bldgclass", "landuse", "easements", "ownertype", "ownername", "lotarea", "bldgarea", "comarea", "resarea", "officearea", "retailarea", "garagearea", "strgearea", "factryarea", "otherarea", "areasource", "numbldgs", "numfloors", "unitsres", "unitstotal", "lotfront", "lotdepth", "bldgfront", "bldgdepth", "ext", "proxcode", "irrlotcode", "lottype", "bsmtcode", "assessland", "assesstot", "exempttot", "yearbuilt", "yearalter1", "yearalter2", "histdist", "landmark", "builtfar", "residfar", "commfar", "facilfar", "borocode", "bbl", "condono", "tract2010", "xcoord", "ycoord", "zonemap", "zmcode", "sanborn", "taxmap", "edesignum", "appbbl", "appdate", "plutomapid", "firm07_flag", "pfirm15_flag", "version", "dcpedited", "latitude", "longitude", "notes"]}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:31:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:32:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:20+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:21+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:22+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:33+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:33:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"dry_run": true, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "pluto_zip_member", "member": "pluto_25v2_1.csv"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"canonical": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council", "zipcode", "firecomp", "policeprct", "healthcenterdistrict", "healtharea", "sanitboro", "sanitdistrict", "sanitsub", "address", "zonedist1", "zonedist2", "zonedist3", "zonedist4", "overlay1", "overlay2", "spdist1", "spdist2", "spdist3", "ltdheight", "splitzone", "bldgclass", "landuse", "easements", "ownertype", "ownername", "lotarea", "bldgarea", "comarea", "resarea", "officearea", "retailarea", "garagearea", "strgearea", "factryarea", "otherarea", "areasource", "numbldgs", "numfloors", "unitsres", "unitstotal", "lotfront", "lotdepth", "bldgfront", "bldgdepth", "ext", "proxcode", "irrlotcode", "lottype", "bsmtcode", "assessland", "assesstot", "exempttot", "yearbuilt", "yearalter1", "yearalter2", "histdist", "landmark", "builtfar", "residfar", "commfar", "facilfar", "borocode", "bbl", "condono", "tract2010", "xcoord", "ycoord", "zonemap", "zmcode", "sanborn", "taxmap", "edesignum", "appbbl", "appdate", "plutomapid", "firm07_flag", "pfirm15_flag", "version", "dcpedited", "latitude", "longitude", "notes"], "event": "pluto_headers", "raw": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council", "zipcode", "firecomp", "policeprct", "healthcenterdistrict", "healtharea", "sanitboro", "sanitdistrict", "sanitsub", "address", "zonedist1", "zonedist2", "zonedist3", "zonedist4", "overlay1", "overlay2", "spdist1", "spdist2", "spdist3", "ltdheight", "splitzone", "bldgclass", "landuse", "easements", "ownertype", "ownername", "lotarea", "bldgarea", "comarea", "resarea", "officearea", "retailarea", "garagearea", "strgearea", "factryarea", "otherarea", "areasource", "numbldgs", "numfloors", "unitsres", "unitstotal", "lotfront", "lotdepth", "bldgfront", "bldgdepth", "ext", "proxcode", "irrlotcode", "lottype", "bsmtcode", "assessland", "assesstot", "exempttot", "yearbuilt", "yearalter1", "yearalter2", "histdist", "landmark", "builtfar", "residfar", "commfar", "facilfar", "borocode", "bbl", "condono", "tract2010", "xcoord", "ycoord", "zonemap", "zmcode", "sanborn", "taxmap", "edesignum", "appbbl", "appdate", "plutomapid", "firm07_flag", "pfirm15_flag", "version", "dcpedited", "latitude", "longitude", "notes"]}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:43:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"dry_run": true, "event": "pluto_ingest_start", "url": "https://s-media.nyc.gov/agencies/dcp/assets/files/zip/data-tools/bytes/pluto/nyc_pluto_25v2_1_csv.zip", "zip_path": "/tmp/pluto.zip"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "pluto_zip_member", "member": "pluto_25v2_1.csv"}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"canonical": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council", "zipcode", "firecomp", "policeprct", "healthcenterdistrict", "healtharea", "sanitboro", "sanitdistrict", "sanitsub", "address", "zonedist1", "zonedist2", "zonedist3", "zonedist4", "overlay1", "overlay2", "spdist1", "spdist2", "spdist3", "ltdheight", "splitzone", "bldgclass", "landuse", "easements", "ownertype", "ownername", "lotarea", "bldgarea", "comarea", "resarea", "officearea", "retailarea", "garagearea", "strgearea", "factryarea", "otherarea", "areasource", "numbldgs", "numfloors", "unitsres", "unitstotal", "lotfront", "lotdepth", "bldgfront", "bldgdepth", "ext", "proxcode", "irrlotcode", "lottype", "bsmtcode", "assessland", "assesstot", "exempttot", "yearbuilt", "yearalter1", "yearalter2", "histdist", "landmark", "builtfar", "residfar", "commfar", "facilfar", "borocode", "bbl", "condono", "tract2010", "xcoord", "ycoord", "zonemap", "zmcode", "sanborn", "taxmap", "edesignum", "appbbl", "appdate", "plutomapid", "firm07_flag", "pfirm15_flag", "version", "dcpedited", "latitude", "longitude", "notes"], "event": "pluto_headers", "raw": ["borough", "block", "lot", "cd", "bct2020", "bctcb2020", "ct2010", "cb2010", "schooldist", "council", "zipcode", "firecomp", "policeprct", "healthcenterdistrict", "healtharea", "sanitboro", "sanitdistrict", "sanitsub", "address", "zonedist1", "zonedist2", "zonedist3", "zonedist4", "overlay1", "overlay2", "spdist1", "spdist2", "spdist3", "ltdheight", "splitzone", "bldgclass", "landuse", "easements", "ownertype", "ownername", "lotarea", "bldgarea", "comarea", "resarea", "officearea", "retailarea", "garagearea", "strgearea", "factryarea", "otherarea", "areasource", "numbldgs", "numfloors", "unitsres", "unitstotal", "lotfront", "lotdepth", "bldgfront", "bldgdepth", "ext", "proxcode", "irrlotcode", "lottype", "bsmtcode", "assessland", "assesstot", "exempttot", "yearbuilt", "yearalter1", "yearalter2", "histdist", "landmark", "builtfar", "residfar", "commfar", "facilfar", "borocode", "bbl", "condono", "tract2010", "xcoord", "ycoord", "zonemap", "zmcode", "sanborn", "taxmap", "edesignum", "appbbl", "appdate", "plutomapid", "firm07_flag", "pfirm15_flag", "version", "dcpedited", "latitude", "longitude", "notes"]}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:47+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:48+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:49+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:50+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:51+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:52+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:53+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:54+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:55+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:56+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:57+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:58+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:44:59+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:00+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:01+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:02+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:03+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:04+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:05+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:06+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:07+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:08+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:09+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:10+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:11+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:12+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:13+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:14+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:15+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:16+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:17+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:18+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:19+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:23+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:24+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:25+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:26+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:27+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:28+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:29+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:30+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:31+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:32+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:34+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:35+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:36+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:37+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:38+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:39+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:40+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:41+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:42+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:43+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:44+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:45+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}
+
+
+---
+
+- **Timestamp (UTC)**: 2025-10-15T02:45:46+00:00
+- **Author/Agent**: Codex
+- **Prompt (summary)**: PLUTO ingest
+- **Files changed**: backend/app/ingestion/pluto.py
+- **Notes/Reasons**: {"event": "batch_insert", "rows": 1000}

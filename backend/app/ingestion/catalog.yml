@@ -1,0 +1,53 @@
+dob_permits:
+  env_resource: DOB_PERMITS_RESOURCE_ID
+  env_date_field: PERMITS_DATE_FIELD
+  staging_table: staging_dob_permits
+  final_table: dob_permits
+  pk: job_number
+  normalizer: normalize_dob_permit
+  refresh_mv: true
+
+dob_violations:
+  env_resource: DOB_VIOL_RESOURCE_ID
+  env_date_field: DOB_VIOL_DATE_FIELD
+  staging_table: staging_dob_violations
+  final_table: dob_violations
+  pk: violation_number
+  normalizer: normalize_dob_violation
+  refresh_mv: true
+
+hpd_violations:
+  env_resource: HPD_VIOL_RESOURCE_ID
+  env_date_field: HPD_VIOL_DATE_FIELD
+  staging_table: staging_hpd_violations
+  final_table: hpd_violations
+  pk: violation_id
+  normalizer: normalize_hpd_violation
+  refresh_mv: true
+
+hpd_registrations:
+  env_resource: HPD_REG_RESOURCE_ID
+  env_date_field: HPD_REG_DATE_FIELD
+  staging_table: staging_hpd_registrations
+  final_table: hpd_registrations
+  pk: registration_id
+  normalizer: normalize_hpd_registration
+  refresh_mv: false
+
+acris_legal:
+  env_resource: ACRIS_LEGAL_RESOURCE_ID
+  env_date_field: ACRIS_LEGAL_DATE_FIELD
+  staging_table: staging_acris_legal
+  final_table: acris_legal
+  pk: doc_id
+  normalizer: normalize_acris_legal
+  refresh_mv: false
+
+acris_mortgage:
+  env_resource: ACRIS_MTG_RESOURCE_ID
+  env_date_field: ACRIS_MTG_DATE_FIELD
+  staging_table: staging_acris_mortgage
+  final_table: acris_mortgage
+  pk: doc_id
+  normalizer: normalize_acris_mortgage
+  refresh_mv: false

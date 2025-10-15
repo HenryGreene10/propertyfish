@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 from app.db.connection import get_conn
+from app.utils.resolve import bbl_for_address
 
 
 def get_summary_by_bbl(bbl: str) -> Optional[Dict[str, Any]]:
@@ -67,21 +68,25 @@ def get_mortgages_by_bbl(bbl: str, limit: int) -> List[Dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
-def get_permits_by_bbl(bbl: str, since: str | None = None) -> List[Dict[str, Any]]:
-    base_sql = (
+def get_permits_by_bbl(bbl: str, limit: int = 20) -> List[Dict[str, Any]]:
+    sql = (
         """
-        SELECT filed_at, details
-        FROM permits_violations
-        WHERE bbl=%s AND kind='permit'
+        SELECT job_number,
+               status,
+               job_type,
+               work_type,
+               filing_date,
+               latest_status_date,
+               estimated_cost,
+               raw
+        FROM dob_permits
+        WHERE bbl = %s
+        ORDER BY COALESCE(filing_date, latest_status_date) DESC NULLS LAST
+        LIMIT %s;
         """
     )
-    params: List[Any] = [bbl]
-    if since:
-        base_sql += " AND filed_at >= %s"
-        params.append(since)
-    base_sql += " ORDER BY filed_at DESC"
     with get_conn() as conn, conn.cursor() as cur:
-        cur.execute(base_sql, tuple(params))
+        cur.execute(sql, (bbl, limit))
         rows = cur.fetchall() or []
         return [dict(r) for r in rows]
 
@@ -117,3 +122,28 @@ def get_zoning_by_bbl(bbl: str) -> Optional[Dict[str, Any]]:
         cur.execute(sql, (bbl,))
         row = cur.fetchone()
         return dict(row) if row else None
+
+
+def get_permits(conn, bbl: str) -> List[Dict[str, Any]]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT bbl,
+                   job_number,
+                   status,
+                   filing_date AS filed_date,
+                   estimated_cost,
+                   raw
+            FROM dob_permits
+            WHERE bbl = %s
+            ORDER BY filing_date DESC NULLS LAST
+            LIMIT 200
+            """,
+            (bbl,),
+        )
+        rows = cur.fetchall() or []
+        return [dict(r) for r in rows]
+
+
+def resolve_to_bbl(conn, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return bbl_for_address(conn, **params)
