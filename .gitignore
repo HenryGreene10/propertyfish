@@ -73,3 +73,11 @@ coverage.xml
 # Seeds / local data
 backend/app/db/seeds/*.csv
 data/**/*.csv
+
+
+data/
+logs/
+*.csv
+*.zip
+*.gz
+*.ndjson
