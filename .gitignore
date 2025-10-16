@@ -81,3 +81,8 @@ logs/
 *.zip
 *.gz
 *.ndjson
+# data & artifacts
+data/
+*.csv
+*.zip
+logs/
