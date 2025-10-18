@@ -1,0 +1,20 @@
+backend/run_ingestion.py:15:    database_url = os.getenv("DATABASE_URL")
+backend/app/db/connection.py:16:    dsn = os.getenv("DATABASE_URL")
+backend/app/main.py:29:    return {"service": "propertyfish-chat", "env": os.getenv("ENV", "dev")}
+backend/app/routes.py:12:    if os.getenv("ENV") == "prod":
+backend/app/services/chat.py:34:        dsn = os.getenv("DATABASE_URL")
+backend/app/ingestion/orchestrator.py:18:    database_url = os.getenv("DATABASE_URL")
+backend/app/ingestion/orchestrator.py:62:    env_value = os.getenv("DAYS_BACK_DEFAULT")
+backend/etl/acris_ingest.py:37:    path = csv_path or os.getenv("ACRIS_CSV_PATH") or SEED_DEFAULT
+backend/app/ingestion/common.py:16:SOC_BASE = os.getenv("NYC_SOCRATA_BASE", "https://data.cityofnewyork.us").rstrip("/")
+backend/app/ingestion/common.py:17:SOC_APP_TOKEN = os.getenv("NYC_SOCRATA_APP_TOKEN")
+backend/app/ingestion/pluto.py:35:    url = os.getenv("PLUTO_URL", "")
+backend/app/ingestion/pluto.py:62:    use_bbl_pk = os.getenv("USE_BBL_AS_PK", "true").lower() != "false"
+backend/app/ingestion/framework.py:41:DEFAULT_MIN_SLEEP_MS = int(os.getenv("POLITE_MIN_SLEEP_MS", "200"))
+backend/app/ingestion/framework.py:42:DEFAULT_MAX_SLEEP_MS = int(os.getenv("POLITE_MAX_SLEEP_MS", "600"))
+backend/app/ingestion/framework.py:137:    resource_id = os.getenv(env_key)
+backend/app/ingestion/framework.py:148:        env_value = os.getenv(env_key)
+backend/etl/zola_ingest.py:26:    path = csv_path or os.getenv("ZONING_CSV_PATH") or SEED_DEFAULT
+backend/etl/dob_ingest.py:20:    path = csv_path or os.getenv("DOB_PERMITS_CSV_PATH") or SEED_PERMITS
+backend/etl/dob_ingest.py:70:    path = csv_path or os.getenv("DOB_VIOLATIONS_CSV_PATH") or SEED_VIOLS
+backend/etl/pluto_ingest.py:26:    path = csv_path or os.getenv("PLUTO_CSV_PATH") or SEED_DEFAULT

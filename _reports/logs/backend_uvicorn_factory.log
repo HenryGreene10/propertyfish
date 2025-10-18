@@ -1,0 +1,1 @@
+ERROR:    Error loading ASGI app factory: FastAPI.__call__() missing 3 required positional arguments: 'scope', 'receive', and 'send'
