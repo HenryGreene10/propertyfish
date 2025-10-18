@@ -86,3 +86,8 @@ data/
 *.csv
 *.zip
 logs/
+
+# generated
+_reports/
+*.log
+data/
