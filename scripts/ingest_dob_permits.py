@@ -58,8 +58,6 @@ DEFAULT_SELECT_FIELDS = [
     "boro",
     "block",
     "lot",
-    "latitude",
-    "longitude",
     "source_row_id",
 ]
 
@@ -161,12 +159,22 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--days",
         type=int,
-        default=DAYS_BACK_DEFAULT,
-        help=f"Fetch permits updated within the past N days (default {DAYS_BACK_DEFAULT}).",
+        default=None,
+        help=(
+            "Fetch permits updated within the past N days "
+            f"(default {DAYS_BACK_DEFAULT}; ignored when --since/--until supplied)."
+        ),
     )
     parser.add_argument(
         "--date-field",
-        help="Force using this column as the incremental date/timestamp field.",
+        default="issuance_date",
+        help="Use this column as the incremental field (default: issuance_date).",
+    )
+    parser.add_argument(
+        "--recent",
+        type=int,
+        default=50000,
+        help="Fallback row count when text fields need client-side filtering (default 50000).",
     )
     parser.add_argument(
         "--dry-run",
@@ -178,7 +186,13 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print candidate date fields with recency metrics and exit.",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if (args.since or args.until) and args.days is not None:
+        parser.error("--since/--until cannot be combined with --days")
+    if args.recent is not None and args.recent < 0:
+        parser.error("--recent must be non-negative")
+    return args
 
 
 def load_environment() -> None:
@@ -224,7 +238,7 @@ def compute_window(
     watermark: datetime,
     since_arg: Optional[str],
     until_arg: Optional[str],
-    days: int,
+    days: Optional[int],
 ) -> Tuple[datetime, datetime]:
     now = datetime.now(timezone.utc)
     default_until = floor_to_midnight(now)
@@ -239,8 +253,8 @@ def compute_window(
         since_dt = parse_datetime_arg(since_arg)
         since = floor_to_midnight(since_dt)
     else:
-        days = max(days, 1)
-        since = until - timedelta(days=days)
+        effective_days = DAYS_BACK_DEFAULT if days is None else max(days, 1)
+        since = until - timedelta(days=effective_days)
 
     since = max(since, watermark or EPOCH)
     if since > until:
@@ -268,6 +282,10 @@ def parse_any_datetime(value: Any) -> Optional[datetime]:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
+
+
+def is_date_like_dtype(dtype: Optional[str]) -> bool:
+    return (dtype or "").lower() in {"calendar_date", "floating_timestamp", "date"}
 
 
 def build_available_map(columns: List[Dict[str, Any]]) -> Dict[str, str]:
@@ -306,7 +324,22 @@ def order_candidate_fields(fields: List[Tuple[str, str]]) -> List[Tuple[str, str
     return ordered
 
 
-def build_select_fields(date_field: str, available_map: Dict[str, str]) -> List[str]:
+def _resolve_coordinate_fields(columns: List[Dict[str, Any]]) -> Tuple[Optional[str], Optional[str]]:
+    lat_candidates = ["gis_latitude", "latitude"]
+    lon_candidates = ["gis_longitude", "longitude"]
+    names = { (col.get("fieldName") or "").lower(): col.get("fieldName") for col in columns }
+
+    lat_field = next((names.get(c) for c in lat_candidates if names.get(c)), None)
+    lon_field = next((names.get(c) for c in lon_candidates if names.get(c)), None)
+    return lat_field, lon_field
+
+
+def build_select_fields(
+    date_field: str,
+    available_map: Dict[str, str],
+    lat_field: Optional[str],
+    lon_field: Optional[str],
+) -> List[str]:
     desired = [date_field] + DEFAULT_SELECT_FIELDS
     fields: List[str] = []
     seen: set[str] = set()
@@ -316,6 +349,17 @@ def build_select_fields(date_field: str, available_map: Dict[str, str]) -> List[
         if actual and actual.lower() not in seen:
             fields.append(actual)
             seen.add(actual.lower())
+
+    if lat_field:
+        alias = "latitude"
+        expression = f"{lat_field} AS {alias}" if lat_field.lower() != alias else lat_field
+        fields.append(expression)
+        seen.add(alias)
+    if lon_field:
+        alias = "longitude"
+        expression = f"{lon_field} AS {alias}" if lon_field.lower() != alias else lon_field
+        fields.append(expression)
+        seen.add(alias)
     return fields
 
 
@@ -335,8 +379,9 @@ def select_date_field(
         actual_name = available_map.get(override.lower())
         if not actual_name:
             available = ", ".join(sorted(all_column_names))
-            raise RuntimeError(
-                f"Requested date field '{override}' not found. Available columns: {available}"
+            raise SystemExit(
+                f"[dob_permits] Requested date field '{override}' not found. "
+                f"Available columns: {available}"
             )
         dtype = None
         for column in columns:
@@ -354,8 +399,8 @@ def select_date_field(
 
     if not ordered_candidates:
         available = ", ".join(sorted(all_column_names))
-        raise RuntimeError(
-            "No date-typed columns found in Socrata metadata. "
+        raise SystemExit(
+            "[dob_permits] No date-typed columns found in Socrata metadata. "
             f"Available columns: {available}. Try --date-field."
         )
 
@@ -416,8 +461,8 @@ def select_date_field(
         return field, dtype, count, where_clause
 
     available = ", ".join(sorted(all_column_names))
-    raise RuntimeError(
-        "No usable date field found for DOB permits ingestion. "
+    raise SystemExit(
+        "[dob_permits] No usable date field found for DOB permits ingestion. "
         f"Available columns: {available}. Try --date-field."
     )
 
@@ -436,12 +481,53 @@ def count_with_fallback(client: SocrataClient, field: str, since_iso: str, until
                 return count, between
             except SocrataError as exc2:
                 if exc2.status == 400:
-                    raise RuntimeError(
-                        f"SoQL count failed for field '{field}' with SINCE={since_iso}, UNTIL={until_iso}. "
-                        f"Errors: primary={exc.body!r}, between={exc2.body!r}"
+                    raise SystemExit(
+                        f"[dob_permits] SoQL count failed for field '{field}' with SINCE={since_iso}, "
+                        f"UNTIL={until_iso}. Errors: primary={exc.body!r}, between={exc2.body!r}"
                     ) from exc2
                 raise
         raise
+
+
+def fetch_recent_rows_for_text_field(
+    client: SocrataClient,
+    field: str,
+    select_fields: List[str],
+    limit: int,
+    since: datetime,
+    until: datetime,
+) -> Tuple[List[Dict[str, Any]], int, int]:
+    if limit <= 0:
+        return [], 0, 0
+
+    params: Dict[str, Any] = {
+        "$limit": limit,
+        "$order": f"{field} DESC NULLS LAST",
+    }
+    if select_fields:
+        params["$select"] = ", ".join(select_fields)
+
+    rows = client.query_resource(params)
+    total_rows = len(rows)
+    unparsable = 0
+    filtered: List[Dict[str, Any]] = []
+
+    for row in rows:
+        raw_value = row.get(field)
+        parsed = parse_any_datetime(raw_value)
+        if parsed is None:
+            unparsable += 1
+            continue
+        if since <= parsed < until:
+            filtered.append(row)
+
+    if total_rows > 0 and unparsable == total_rows:
+        raise SystemExit(
+            f"[dob_permits] Field '{field}' returned {unparsable} values that are not ISO-8601 timestamps. "
+            "Adjust --date-field or confirm the Socrata schema."
+        )
+
+    return filtered, unparsable, total_rows
 
 
 def diagnose_date_fields(client: SocrataClient) -> None:
@@ -449,6 +535,17 @@ def diagnose_date_fields(client: SocrataClient) -> None:
     available_map = build_available_map(columns)
     candidates = order_candidate_fields(build_candidate_fields(columns))
     all_column_names = sorted(available_map.values())
+
+    if not columns:
+        print("No columns returned from Socrata metadata; cannot diagnose.")
+        return
+
+    print("SoQL metadata types:")
+    for column in columns:
+        field = column.get("fieldName") or "<unknown>"
+        dtype = column.get("dataTypeName") or ""
+        print(f"  {field}: {dtype}")
+    print()
 
     if not candidates:
         available = ", ".join(sorted(all_column_names))
@@ -492,6 +589,22 @@ def diagnose_date_fields(client: SocrataClient) -> None:
             f"{field:<24} | {dtype or '':<18} | {max_display:<26} | "
             f"{count_7_display:<9} | {count_30_display:<10}"
         )
+
+    try:
+        sample = client.query_resource({"$limit": 1})
+    except SocrataError as exc:
+        print(f"\nSample row schema unavailable (error: {exc.status or ''}).")
+        return
+
+    if not sample:
+        print("\nSample row schema: no rows returned.")
+        return
+
+    print("\nSample row schema:")
+    row = sample[0]
+    for key in sorted(row.keys()):
+        value = row[key]
+        print(f"  {key}: {type(value).__name__}")
 
 
 def normalize_date(value: Any) -> Optional[str]:
@@ -694,6 +807,18 @@ def ingest() -> int:
     args = parse_args()
     load_environment()
 
+    select_fields = [
+        "issuance_date",
+        "filing_date",
+        "job__",
+        "job_type",
+        "borough",
+        "block",
+        "lot",
+        "house__",
+        "street_name",
+    ]
+
     resource_id = os.getenv("DOB_PERMITS_RESOURCE_ID")
     if not resource_id:
         print("DOB_PERMITS_RESOURCE_ID is not configured; nothing to ingest.", file=sys.stderr)
@@ -727,6 +852,7 @@ def ingest() -> int:
 
             columns = client.get_view_columns()
             available_map = build_available_map(columns)
+            lat_field, lon_field = _resolve_coordinate_fields(columns)
             date_field, dtype, window_count, where_clause = select_date_field(
                 client, columns, since_iso, until_iso, args.date_field
             )
@@ -735,70 +861,131 @@ def ingest() -> int:
                 f"with window count={window_count}"
             )
             print(f"[dob_permits] using $where: {where_clause}")
-            if window_count == 0 and not args.date_field:
-                print("[dob_permits] No rows matched the requested window; proceeding to update watermark.")
-            order_clause = f"{date_field} ASC"
+            is_date_field = is_date_like_dtype(dtype)
+            fallback_rows: List[Dict[str, Any]] = []
+            fallback_unparsable = 0
+            fallback_total = 0
+            select_fields = build_select_fields(date_field, available_map, lat_field, lon_field)
 
-            select_fields = build_select_fields(date_field, available_map)
+            if window_count == 0 and not is_date_field:
+                if args.recent:
+                    fallback_rows, fallback_unparsable, fallback_total = fetch_recent_rows_for_text_field(
+                        client,
+                        date_field,
+                        select_fields,
+                        args.recent,
+                        since,
+                        until,
+                    )
+                    if fallback_rows:
+                        print(
+                            f"[dob_permits] Fallback recent fetch matched {len(fallback_rows)} rows "
+                            f"within [{since_iso},{until_iso}) using '{date_field}'."
+                        )
+                    elif fallback_total:
+                        print(
+                            f"[dob_permits] Fallback recent fetch examined {fallback_total} rows "
+                            f"but none fell within [{since_iso},{until_iso})."
+                        )
+                    else:
+                        print(
+                            f"[dob_permits] Fallback recent fetch returned 0 rows (limit={args.recent})."
+                        )
+                    if fallback_unparsable:
+                        print(
+                            f"[dob_permits] Skipped {fallback_unparsable} rows with unparsable "
+                            f"values for '{date_field}'.",
+                            file=sys.stderr,
+                        )
+                else:
+                    print(
+                        "[dob_permits] No rows matched the requested window and --recent=0 disables fallback."
+                    )
+
+            order_clause = f"{date_field} ASC"
             if select_fields:
                 print(f"[dob_permits] Using $select columns: {', '.join(select_fields)}")
             else:
                 print("[dob_permits] $select omitted; fetching all columns.")
 
             if args.dry_run:
-                preview_params = {
-                    "$where": where_clause,
-                    "$order": order_clause,
-                    "$limit": 1,
-                }
-                preview_rows = client.query_resource(preview_params)
-                if preview_rows:
-                    print(f"[dob_permits] sample keys: {sorted(preview_rows[0].keys())}")
+                if fallback_rows:
+                    print(f"[dob_permits] sample keys: {sorted(fallback_rows[0].keys())}")
+                    print(
+                        f"[dob_permits] Dry run complete (fallback mode). field={date_field} "
+                        f"order={date_field} DESC NULLS LAST limit={args.recent} select="
+                        f"{'omitted' if not select_fields else ','.join(select_fields)}"
+                    )
                 else:
-                    print("[dob_permits] No rows in window; nothing to preview.")
-                print(
-                    f"[dob_permits] Dry run complete. field={date_field} "
-                    f"where={where_clause} order={order_clause} limit=1 "
-                    f"select={'omitted' if not select_fields else ','.join(select_fields)}"
-                )
+                    preview_params = {
+                        "$where": where_clause,
+                        "$order": order_clause,
+                        "$limit": 1,
+                    }
+                    preview_rows = client.query_resource(preview_params)
+                    if preview_rows:
+                        print(f"[dob_permits] sample keys: {sorted(preview_rows[0].keys())}")
+                    else:
+                        print("[dob_permits] No rows in window; nothing to preview.")
+                    print(
+                        f"[dob_permits] Dry run complete. field={date_field} "
+                        f"where={where_clause} order={order_clause} limit=1 "
+                        f"select={'omitted' if not select_fields else ','.join(select_fields)}"
+                    )
                 conn.rollback()
                 return 0
 
-            offset = 0
             sample_logged = False
 
-            while True:
-                params = {
-                    "$limit": PAGE_SIZE,
-                    "$offset": offset,
-                    "$order": order_clause,
-                    "$where": where_clause,
-                }
-                if select_fields:
-                    params["$select"] = ", ".join(select_fields)
-                rows = client.query_resource(params)
-                if not rows:
-                    break
-
-                if not sample_logged:
-                    print(f"[dob_permits] sample keys: {sorted(rows[0].keys())}")
+            if fallback_rows:
+                if fallback_rows and not sample_logged:
+                    print(f"[dob_permits] sample keys: {sorted(fallback_rows[0].keys())}")
                     sample_logged = True
+                for start in range(0, len(fallback_rows), PAGE_SIZE):
+                    rows = fallback_rows[start : start + PAGE_SIZE]
+                    normalized_rows: List[Dict[str, Any]] = []
+                    for raw_row in rows:
+                        normalized = normalize_row(raw_row)
+                        if normalized:
+                            normalized_rows.append(normalized)
+                    if normalized_rows:
+                        inserted, updated = upsert_records(conn, normalized_rows)
+                        inserted_total += inserted
+                        updated_total += updated
+            else:
+                offset = 0
+                while True:
+                    params = {
+                        "$limit": PAGE_SIZE,
+                        "$offset": offset,
+                        "$order": order_clause,
+                        "$where": where_clause,
+                    }
+                    if select_fields:
+                        params["$select"] = ", ".join(select_fields)
+                    rows = client.query_resource(params)
+                    if not rows:
+                        break
 
-                normalized_rows: List[Dict[str, Any]] = []
-                for raw_row in rows:
-                    normalized = normalize_row(raw_row)
-                    if normalized:
-                        normalized_rows.append(normalized)
+                    if not sample_logged:
+                        print(f"[dob_permits] sample keys: {sorted(rows[0].keys())}")
+                        sample_logged = True
 
-                if normalized_rows:
-                    inserted, updated = upsert_records(conn, normalized_rows)
-                    inserted_total += inserted
-                    updated_total += updated
+                    normalized_rows = []
+                    for raw_row in rows:
+                        normalized = normalize_row(raw_row)
+                        if normalized:
+                            normalized_rows.append(normalized)
 
-                offset += len(rows)
-                if len(rows) < PAGE_SIZE:
-                    break
-                polite_sleep(min_sleep_ms, max_sleep_ms)
+                    if normalized_rows:
+                        inserted, updated = upsert_records(conn, normalized_rows)
+                        inserted_total += inserted
+                        updated_total += updated
+
+                    offset += len(rows)
+                    if len(rows) < PAGE_SIZE:
+                        break
+                    polite_sleep(min_sleep_ms, max_sleep_ms)
 
             update_watermark(conn, until)
             finished_at = datetime.now(timezone.utc)
