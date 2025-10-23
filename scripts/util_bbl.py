@@ -1,25 +1,12 @@
 from __future__ import annotations
 
+import sys
+from pathlib import Path
 
-def normalize_bbl(value: str | int | None) -> str | None:
-    """
-    Normalize raw BBL input into a 10-digit string (borough + block + lot).
+BACKEND_PATH = Path(__file__).resolve().parents[1] / "backend"
+if str(BACKEND_PATH) not in sys.path:
+    sys.path.insert(0, str(BACKEND_PATH))
 
-    Removes non-digit characters and left-pads with zeros when necessary.
-    Returns None when a canonical value cannot be produced.
-    """
-    if value is None:
-        return None
+from app.utils.normalize import normalize_bbl  # noqa: E402
 
-    raw = str(value).strip()
-    if not raw:
-        return None
-
-    digits = "".join(ch for ch in raw if ch.isdigit())
-    if not digits:
-        return None
-
-    if len(digits) > 10:
-        digits = digits[-10:]
-
-    return digits.zfill(10)
+__all__ = ["normalize_bbl"]

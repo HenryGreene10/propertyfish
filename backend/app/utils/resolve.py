@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Tuple
 
-from app.ingestion.normalizers import normalize_street, normalize_text
+from app.ingestion.normalizers import normalize_text
+from app.utils.normalize import normalize_address
 
 
 def _split_address(address: str) -> Tuple[str, str]:
@@ -25,8 +26,9 @@ def bbl_for_address(
     if address and not (houseno and street):
         houseno, street = _split_address(address)
 
-    street_norm = normalize_street(street or "")
-    houseno = (houseno or "").strip()
+    addr = normalize_address(houseno, street)
+    street_norm = addr.street or ""
+    houseno = addr.house_number or ""
     borough = (borough or "").upper()
 
     params = {

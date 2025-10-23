@@ -11,6 +11,8 @@ import requests
 from sqlalchemy import text
 from tenacity import retry, stop_after_attempt, wait_exponential
 
+from app.utils.normalize import normalize_bbl
+
 logger = logging.getLogger(__name__)
 
 SOC_BASE = os.getenv("NYC_SOCRATA_BASE", "https://data.cityofnewyork.us").rstrip("/")
@@ -27,51 +29,7 @@ def stable_bbl(boro: Any, block: Any, lot: Any) -> str | None:
     """
     Return a 10-character BBL string (B + block:05 + lot:04) or None if not valid.
     """
-    borough_digit = _normalize_borough(boro)
-    block_int = _coerce_int(block)
-    lot_int = _coerce_int(lot)
-    if not borough_digit or block_int is None or lot_int is None:
-        return None
-    return f"{borough_digit}{block_int:05d}{lot_int:04d}"
-
-
-def _normalize_borough(value: Any) -> str | None:
-    if value is None:
-        return None
-    token = str(value).strip().upper()
-    if not token:
-        return None
-    mapping = {
-        "1": "1",
-        "MANHATTAN": "1",
-        "MN": "1",
-        "NEW YORK": "1",
-        "2": "2",
-        "BRONX": "2",
-        "BX": "2",
-        "3": "3",
-        "BROOKLYN": "3",
-        "BK": "3",
-        "KINGS": "3",
-        "4": "4",
-        "QUEENS": "4",
-        "QN": "4",
-        "QNS": "4",
-        "5": "5",
-        "STATEN ISLAND": "5",
-        "SI": "5",
-        "RICHMOND": "5",
-    }
-    return mapping.get(token)
-
-
-def _coerce_int(value: Any) -> int | None:
-    if value in (None, ""):
-        return None
-    try:
-        return int(str(value).strip())
-    except (TypeError, ValueError):
-        return None
+    return normalize_bbl(boro, block, lot)
 
 
 @retry(stop=stop_after_attempt(5), wait=wait_exponential(min=1, max=10), reraise=True)
