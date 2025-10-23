@@ -3,7 +3,12 @@ from datetime import datetime
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from app.ingestion.common import stable_bbl
+from app.utils.normalize import (
+    BOROUGH_CODE_TO_NAME,
+    normalize_address,
+    normalize_bbl,
+    normalize_borough,
+)
 
 
 def normalize_text(value: str | None) -> str:
@@ -15,30 +20,6 @@ def normalize_text(value: str | None) -> str:
 def normalize_street(value: str | None) -> str:
     text = normalize_text(value)
     return text.replace(".", "").upper()
-
-BOROUGH_ALIASES = {
-    "MANHATTAN": "MANHATTAN",
-    "MN": "MANHATTAN",
-    "NEW YORK": "MANHATTAN",
-    "BRONX": "BRONX",
-    "BX": "BRONX",
-    "BROOKLYN": "BROOKLYN",
-    "BK": "BROOKLYN",
-    "KINGS": "BROOKLYN",
-    "QUEENS": "QUEENS",
-    "QN": "QUEENS",
-    "QNS": "QUEENS",
-    "STATEN ISLAND": "STATEN ISLAND",
-    "SI": "STATEN ISLAND",
-}
-
-BOROUGH_CODES = {
-    "1": "MANHATTAN",
-    "2": "BRONX",
-    "3": "BROOKLYN",
-    "4": "QUEENS",
-    "5": "STATEN ISLAND",
-}
 
 ALIASES: Dict[str, List[str]] = {
     "bbl": ["bbl"],
@@ -77,13 +58,14 @@ def normalize_pluto_row(raw: Dict[str, Any]) -> Dict[str, Any]:
         houseno = houseno or addr_h
         street = street or addr_s
 
-    houseno_clean = normalize_text(houseno).upper() or None
-    street_clean = normalize_text(street).upper() or None
-    borough_clean = to_borough(canonical.get("borough"))
-    if not borough_clean:
+    addr = normalize_address(houseno, street)
+    houseno_clean = addr.house_number
+    street_clean = addr.street
+    borough_code, borough_name = normalize_borough(canonical.get("borough"))
+    if not borough_name:
         bbl_guess = normalize_text(canonical.get("bbl"))
         if bbl_guess:
-            borough_clean = BOROUGH_CODES.get(bbl_guess[:1], borough_clean)
+            borough_name = BOROUGH_CODE_TO_NAME.get(bbl_guess[:1], borough_name)
     zipcode_clean = normalize_text(canonical.get("zipcode")) or None
 
     latitude = to_float(canonical.get("latitude"))
@@ -91,7 +73,8 @@ def normalize_pluto_row(raw: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "bbl": normalize_text(canonical.get("bbl")).upper() or None,
-        "borough": borough_clean,
+        "borough": borough_code,
+        "borough_name": borough_name,
         "houseno": houseno_clean,
         "street": street_clean,
         "zipcode": zipcode_clean,
@@ -135,23 +118,8 @@ def derive_houseno_street(address: Optional[str]) -> Tuple[Optional[str], Option
 
 
 def to_borough(value: Optional[str]) -> Optional[str]:
-    if value in (None, ""):
-        return None
-    token = str(value).strip().upper()
-    if not token:
-        return None
-    if token in BOROUGH_ALIASES:
-        return BOROUGH_ALIASES[token]
-    if token in {"1", "2", "3", "4", "5"}:
-        mapping = {
-            "1": "MANHATTAN",
-            "2": "BRONX",
-            "3": "BROOKLYN",
-            "4": "QUEENS",
-            "5": "STATEN ISLAND",
-        }
-        return mapping.get(token)
-    return token
+    _, borough_name = normalize_borough(value)
+    return borough_name
 
 
 def to_float(value: Any) -> Optional[float]:
@@ -186,16 +154,28 @@ def normalize_dob_permit(row: Dict[str, Any]) -> Dict[str, Any]:
         or row.get("issuance_date")
     )
 
+    borough_value = _first_nonempty(
+        row,
+        ("borough", "borocode", "boro", "borocode1"),
+    )
+    borough_code, borough_name = normalize_borough(borough_value)
+    block_value = _first_nonempty(row, ("block", "block__", "block_num"))
+    lot_value = _first_nonempty(row, ("lot", "lot__", "lot_num"))
+    bbl = normalize_bbl(borough_code or borough_value, block_value, lot_value)
+    if not bbl:
+        bbl = _clean_string(row.get("bbl")) or None
+
+    addr = normalize_address(
+        _first_nonempty(row, ("house__", "house__no", "house_no", "house_number")),
+        _first_nonempty(row, ("street_name", "streetname", "street")),
+    )
+
     normalized = {
         "job_number": job_number,
-        "bbl": stable_bbl(row.get("borough"), row.get("block"), row.get("lot")),
-        "house_no": _clean_string(
-            _first_nonempty(row, ("house__", "house__no", "house_no"))
-        ),
-        "street_name": _clean_string(
-            _first_nonempty(row, ("street_name", "streetname"))
-        ),
-        "borough": _clean_string(row.get("borough")),
+        "bbl": bbl,
+        "house_no": addr.house_number,
+        "street_name": addr.street,
+        "borough": borough_name or _clean_string(row.get("borough")),
         "job_type": _clean_string(row.get("job_type")),
         "work_type": _clean_string(row.get("work_type")),
         "status": _clean_string(row.get("current_status") or row.get("status")),
@@ -236,14 +216,19 @@ def normalize_pluto(row: Dict[str, Any]) -> Dict[str, Any]:
     bbl = _clean_string(row.get("bbl"))
     block = _to_int(_first_nonempty(row, ("block", "block_", "block_num")))
     lot = _to_int(_first_nonempty(row, ("lot", "lot_", "lot_num")))
-    borough_code = _resolve_borough_code(row)
+    borough_raw = _first_nonempty(row, ("borough", "boro", "borocode"))
+    borough_code, _ = normalize_borough(borough_raw)
     if not bbl and borough_code:
-        bbl = stable_bbl(borough_code, block, lot)
+        bbl = normalize_bbl(borough_code, block, lot)
     if not bbl:
         return {}
 
-    house = _clean_string(_first_nonempty(row, ("house", "housenum", "addressnumber")))
-    street = _normalize_street(_first_nonempty(row, ("street", "street_name", "streetname")))
+    addr = normalize_address(
+        _first_nonempty(row, ("house", "housenum", "addressnumber")),
+        _first_nonempty(row, ("street", "street_name", "streetname")),
+    )
+    house = addr.house_number
+    street = addr.street
     zipcode = _clean_string(row.get("zipcode") or row.get("zip"))
     landuse = _clean_string(row.get("landuse") or row.get("land_use"))
     zoning = _clean_string(
@@ -284,13 +269,6 @@ def _clean_string(value: Any) -> str | None:
     if value in (None, ""):
         return None
     return str(value).strip()
-
-
-def _normalize_street(value: Any) -> Optional[str]:
-    cleaned = _clean_string(value)
-    if not cleaned:
-        return None
-    return " ".join(cleaned.upper().split())
 
 
 def _parse_date(value: Any) -> str | None:
@@ -346,40 +324,17 @@ def _resolve_borough_code(row: Dict[str, Any]) -> Optional[str]:
         row.get("borough") or row.get("boro") or row.get("borocode") or row.get("borocode1")
     )
     if borough_value:
-        code = _map_borough(borough_value)
+        code, _ = normalize_borough(borough_value)
         if code:
             return code
     bbl = _clean_string(row.get("bbl"))
-    if bbl and len(bbl) >= 1:
-        first = bbl[0]
-        if first in {"1", "2", "3", "4", "5"}:
-            return first
+    if bbl:
+        digits = re.sub(r"\D+", "", bbl)
+        if digits:
+            first = digits[0]
+            if first in BOROUGH_CODE_TO_NAME:
+                return first
     return None
-
-
-def _map_borough(value: str) -> Optional[str]:
-    token = value.strip().upper()
-    mapping = {
-        "1": "1",
-        "MANHATTAN": "1",
-        "MN": "1",
-        "2": "2",
-        "BRONX": "2",
-        "BX": "2",
-        "3": "3",
-        "BROOKLYN": "3",
-        "BK": "3",
-        "KINGS": "3",
-        "4": "4",
-        "QUEENS": "4",
-        "QN": "4",
-        "QNS": "4",
-        "5": "5",
-        "STATEN ISLAND": "5",
-        "SI": "5",
-        "RICHMOND": "5",
-    }
-    return mapping.get(token)
 
 
 def _canon_header(value: Optional[str]) -> str:
