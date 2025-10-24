@@ -800,7 +800,7 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
     return 0
 
 
-def main() -> None:
+def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     args = parse_args()
     load_environment()
@@ -812,10 +812,18 @@ def main() -> None:
 
     if args.diagnose_date_fields:
         diagnose_date_fields(client, args.date_field)
-        raise SystemExit(0)
+        return 0
 
-    raise SystemExit(ingest(args, client))
+    return ingest(args, client)
+
 
 
 if __name__ == "__main__":
-    main()
+    exit_code = main()
+    # --- end of ingestion ---
+    import subprocess, sys, os
+    subprocess.run(
+        [sys.executable, os.path.join(os.path.dirname(__file__), "refresh_mv.py")],
+        check=True,
+    )
+    raise SystemExit(exit_code)

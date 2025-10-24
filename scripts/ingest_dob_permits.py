@@ -1026,9 +1026,16 @@ def fetch_watermark(conn) -> datetime:
     return EPOCH
 
 
-def main() -> None:
-    raise SystemExit(ingest())
+def main() -> int:
+    return ingest()
 
 
 if __name__ == "__main__":
-    main()
+    exit_code = main()
+    # --- end of ingestion ---
+    import subprocess, sys, os
+    subprocess.run(
+        [sys.executable, os.path.join(os.path.dirname(__file__), "refresh_mv.py")],
+        check=True,
+    )
+    raise SystemExit(exit_code)
