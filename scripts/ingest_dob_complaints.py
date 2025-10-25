@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import random
+import subprocess
 import time
 import os, json, logging, sys, re
 from datetime import datetime, timezone, timedelta
@@ -21,8 +22,8 @@ if str(REPO_ROOT) not in sys.path:
 
 SOURCE_NAME = "dob_complaints_v1"
 DEFAULT_RESOURCE_ID = "eabe-havv"
-DEFAULT_PAGE_LIMIT = 50000
-DEFAULT_DAYS = 30
+PAGE_SIZE = 5000
+DEFAULT_DAYS = 720
 SAMPLE_LIMIT = 200
 DATASET_MAX_SAMPLE_LIMIT = 2000
 MAX_RETRIES = 5
@@ -168,13 +169,18 @@ class SocrataClient:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Ingest DOB complaints from Socrata.")
-    parser.add_argument("--since", help="Fetch complaints updated since YYYY-MM-DD (UTC).")
-    parser.add_argument("--until", help="Fetch complaints updated before YYYY-MM-DD (UTC).")
+    parser.add_argument(
+        "--since",
+        help="Fetch complaints updated/entered on or after this ISO date (UTC).",
+    )
     parser.add_argument(
         "--days",
         type=int,
         default=DEFAULT_DAYS,
-        help=f"Fetch complaints updated within the past N days (default {DEFAULT_DAYS}).",
+        help=(
+            "Fetch complaints updated within the past N days when --since is omitted "
+            f"(default {DEFAULT_DAYS})."
+        ),
     )
     parser.add_argument(
         "--date-field",
@@ -190,13 +196,11 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Print candidate date fields diagnostics and exit.",
     )
-    parser.add_argument(
-        "--page-limit",
-        type=int,
-        default=DEFAULT_PAGE_LIMIT,
-        help=f"Page size for Socrata requests (default {DEFAULT_PAGE_LIMIT}).",
-    )
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.days is not None and args.days <= 0:
+        parser.error("--days must be positive")
+    return args
 
 
 def load_environment() -> None:
@@ -217,6 +221,41 @@ def get_connection_factory():
     except ImportError as exc:  # pragma: no cover
         raise ImportError("Unable to import database connection helper.") from exc
     return conn_factory
+
+
+def floor_to_midnight(dt: datetime) -> datetime:
+    dt_utc = dt.astimezone(timezone.utc)
+    return datetime(dt_utc.year, dt_utc.month, dt_utc.day, tzinfo=timezone.utc)
+
+
+def parse_since_arg(value: str) -> datetime:
+    text = value.strip()
+    try:
+        if "T" in text:
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        else:
+            parsed = datetime.strptime(text, "%Y-%m-%d")
+    except ValueError as exc:
+        raise ValueError(f"Invalid ISO date/time: {value!r}") from exc
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed.astimezone(timezone.utc)
+
+
+def determine_since_dt(args: argparse.Namespace) -> datetime:
+    if args.since:
+        try:
+            since_dt = parse_since_arg(args.since)
+        except ValueError as exc:
+            raise SystemExit(f"[dob_complaints] Invalid --since value: {exc}") from exc
+        return floor_to_midnight(since_dt)
+    days = args.days if args.days is not None else DEFAULT_DAYS
+    baseline = datetime.now(timezone.utc) - timedelta(days=days)
+    return floor_to_midnight(baseline)
+
+
+def format_soql_timestamp(dt: datetime) -> str:
+    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000")
 
 
 def socrata_base_from_env() -> str:
@@ -592,76 +631,108 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
 
     conn_factory = get_connection_factory()
     started_at = datetime.now(timezone.utc)
+    since_dt = determine_since_dt(args)
+    since_display = since_dt.date().isoformat()
+    since_naive = since_dt.replace(tzinfo=None)
+    since_soql = format_soql_timestamp(since_dt)
+
+    if args.since:
+        logging.info("[dob_complaints] --since provided; overriding --days=%s", args.days)
+    else:
+        logging.info("[dob_complaints] --since not provided; using --days=%s", args.days)
+    logging.info("[dob_complaints] Starting ingest since=%s", since_display)
+
+    dataset_id = client.resource_id
     date_field_for_logs = args.date_field or "<auto>"
-    start_iso = "unknown"
-    end_iso = "unknown"
-    wm = "none"
+    date_field = discover_date_field(client, dataset_id, args.date_field)
+    date_field_for_logs = date_field
+    logging.info("[dob_complaints] Using date_field=%s", date_field)
+
+    columns = client.get_view_columns(dataset_id)
+    available_map: Dict[str, str] = {}
+    for column in columns:
+        field_name = column.get("fieldName")
+        if field_name:
+            available_map[field_name.lower()] = field_name
+
+    select_fields: List[str] = list(dict.fromkeys(DEFAULT_SELECT_FIELDS + [date_field]))
+
+    filter_candidates: List[str] = [":updated_at"] + DATE_PREF_ORDER
+    if date_field not in DATE_PREF_ORDER:
+        filter_candidates.append(date_field)
+
+    filter_fields: List[str] = []
+    for candidate in filter_candidates:
+        if candidate.startswith(":"):
+            if candidate not in filter_fields:
+                filter_fields.append(candidate)
+            continue
+        actual = available_map.get(candidate.lower())
+        if actual and actual not in filter_fields:
+            filter_fields.append(actual)
+
+    if filter_fields:
+        comparisons = [f"{field} >= '{since_soql}'" for field in filter_fields]
+        where_clause: Optional[str] = "(" + " OR ".join(comparisons) + ")"
+        logging.info("[dob_complaints] Applying filters on: %s", ", ".join(filter_fields))
+    else:
+        where_clause = None
+        logging.warning(
+            "[dob_complaints] No filter fields available; relying on client-side filtering."
+        )
+
+    order_field: Optional[str] = ":updated_at" if filter_fields else None
+    if order_field and order_field not in filter_fields:
+        order_field = None
+    if not order_field and filter_fields:
+        order_field = filter_fields[0]
+    if order_field:
+        logging.info("[dob_complaints] Ordering by %s", order_field)
+    else:
+        logging.warning("[dob_complaints] No order field resolved; using API default order.")
+
+    page_size = PAGE_SIZE
+    total_downloaded = 0
+    total_inserted = 0
+    total_updated = 0
+    total_skipped = 0
+    pages = 0
+    should_refresh = False
+    latest_processed: Optional[datetime] = None
 
     with conn_factory() as conn:
         try:
-            dataset_id = client.resource_id
-            date_field = discover_date_field(client, dataset_id, args.date_field)
-            date_field_for_logs = date_field
-
-            ds_max_dt = parsed_dataset_max(client, dataset_id, date_field)
-            wm = ds_max_dt.isoformat() if ds_max_dt else "none"
-
-            since_dt, until_dt = build_window(client, dataset_id, date_field, args.days)
-            start_iso = since_dt.strftime("%Y-%m-%dT00:00:00.000")
-            end_iso = until_dt.strftime("%Y-%m-%dT00:00:00.000")
-
-            server_field = ":updated_at"
-            order_clause = f"{server_field} ASC"
-            window_count, where_clause = count_with_fallback(client, server_field, date_field, start_iso, end_iso)
-
-            page_limit = max(1, args.page_limit)
-            params: Dict[str, Any] = {
-                "$select": ",".join(DEFAULT_SELECT_FIELDS),
-                "$order": order_clause,
-                "$limit": page_limit,
-            }
-            if where_clause:
-                params["$where"] = where_clause
-
-            logging.info("[dob_complaints] Using date_field=%s", date_field)
-            logging.info("[dob_complaints] Server window via :updated_at; client filtering via %s", date_field)
-            logging.info(
-                "[dob_complaints] Window request since=%s until=%s (dataset_max_parsed=%s)",
-                start_iso,
-                end_iso,
-                wm,
-            )
-            logging.info("[dob_complaints] using $where: %s", where_clause or "<none>")
-            logging.info("[dob_complaints] window_count=%s", window_count)
-
             crosswalk_available = False
             warned_crosswalk_missing = False
             if not args.dry_run:
                 try:
                     crosswalk_available = crosswalk_exists(conn)
-                except Exception as exc:  # noqa: BLE001
+                except Exception as exc:
                     logging.info("[dob_complaints] Unable to check BIN→BBL crosswalk: %r", exc)
                     crosswalk_available = False
                 if not crosswalk_available:
                     logging.warning("[dob_complaints] BIN→BBL mapping skipped (pad_bin_bbl not found).")
                     warned_crosswalk_missing = True
 
-            pages = 0
-            rows_scanned = 0
-            rows_in_window = 0
-            rows_with_address = 0
-            total_inserted = 0
-            total_updated = 0
             offset = 0
-
             while True:
-                page_params = dict(params)
-                page_params["$offset"] = offset
-                rows = client.query_resource(page_params)
+                params: Dict[str, Any] = {
+                    "$select": ",".join(select_fields),
+                    "$limit": page_size,
+                    "$offset": offset,
+                }
+                if where_clause:
+                    params["$where"] = where_clause
+                if order_field:
+                    params["$order"] = f"{order_field} ASC"
+
+                rows = client.query_resource(params)
                 if not rows:
                     break
 
                 pages += 1
+                batch_count = len(rows)
+                total_downloaded += batch_count
 
                 bin_to_bbl: Dict[int, int] = {}
                 bins_seen: set[int] = set()
@@ -677,7 +748,7 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
                     if bins_seen:
                         try:
                             bin_to_bbl = map_bins_to_bbl(conn, list(bins_seen))
-                        except Exception as exc:  # noqa: BLE001
+                        except Exception as exc:
                             logging.warning("[dob_complaints] BIN→BBL mapping unavailable: %r", exc)
                             crosswalk_available = False
                             bin_to_bbl = {}
@@ -685,28 +756,26 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
                                 logging.warning("[dob_complaints] BIN→BBL mapping skipped.")
                                 warned_crosswalk_missing = True
 
-                filtered_rows: List[Dict[str, Any]] = []
+                normalized_rows: List[Dict[str, Any]] = []
                 for row in rows:
-                    rows_scanned += 1
-
                     dt_value = _parse_dt_safe(row.get(date_field))
-                    if not dt_value or not (since_dt <= dt_value < until_dt):
+                    if dt_value is None or dt_value < since_naive:
+                        total_skipped += 1
                         continue
 
                     complaint_number = row.get("complaint_number")
                     if not complaint_number:
+                        total_skipped += 1
                         continue
                     complaint_id = str(complaint_number).strip()
                     if not complaint_id:
+                        total_skipped += 1
                         continue
 
                     house_number = (row.get("house_number") or "").strip()
                     house_street = (row.get("house_street") or "").strip()
                     zip_code = (row.get("zip_code") or "").strip()
                     bin_text = (row.get("bin") or "").strip()
-
-                    if house_number and house_street:
-                        rows_with_address += 1
 
                     record: Dict[str, Any] = {
                         "complaint_id": complaint_id,
@@ -731,71 +800,82 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
                         if bin_int is not None:
                             record["bbl"] = bin_to_bbl.get(bin_int)
 
-                    rows_in_window += 1
-                    filtered_rows.append(record)
+                    normalized_rows.append(record)
+
+                    dt_value_aware = dt_value.replace(tzinfo=timezone.utc)
+                    if latest_processed is None or dt_value_aware > latest_processed:
+                        latest_processed = dt_value_aware
 
                 if crosswalk_available and bins_seen and not warned_crosswalk_missing and not bin_to_bbl:
-                    logging.info("[dob_complaints] BIN→BBL crosswalk returned no matches for current window.")
+                    logging.info(
+                        "[dob_complaints] BIN→BBL crosswalk returned no matches for current window."
+                    )
                     warned_crosswalk_missing = True
 
-                if filtered_rows and not args.dry_run:
-                    inserted, updated = upsert_records(conn, filtered_rows)
+                if normalized_rows and not args.dry_run:
+                    inserted, updated = upsert_records(conn, normalized_rows)
                     total_inserted += inserted
                     total_updated += updated
+                    conn.commit()
 
-                offset += len(rows)
+                offset += batch_count
+                if batch_count < page_size:
+                    break
 
-            summary = (
-                f"[dob_complaints] Summary{' (dry-run)' if args.dry_run else ''}: "
-                f"pages={pages}, rows_scanned={rows_scanned}, rows_in_window={rows_in_window}, "
-                f"rows_with_address={rows_with_address}"
-            )
-            print(summary)
-            logging.info(summary)
+            finished_at = datetime.now(timezone.utc)
 
             if args.dry_run:
                 conn.rollback()
-                return 0
-
-            update_watermark(conn, until_dt)
-            conn.commit()
-
-            refresh_materialized_view(conn)
-
-            notes_text = f"date_field={date_field}, window=[{start_iso},{end_iso})"
-            finished_at = datetime.now(timezone.utc)
-            record_ingest_run(
-                conn,
-                started_at,
-                finished_at,
-                "success",
-                total_inserted,
-                total_updated,
-                None,
-                notes_text,
-            )
-            conn.commit()
-        except Exception as exc:  # noqa: BLE001
+            else:
+                watermark_target = latest_processed or finished_at
+                update_watermark(conn, watermark_target)
+                notes_text = f"date_field={date_field}, since={since_display}"
+                record_ingest_run(
+                    conn,
+                    started_at,
+                    finished_at,
+                    "success",
+                    total_inserted,
+                    total_updated,
+                    None,
+                    notes_text,
+                )
+                conn.commit()
+                should_refresh = True
+        except Exception as exc:
             conn.rollback()
             finished_at = datetime.now(timezone.utc)
             if not args.dry_run:
-                failure_notes = f"date_field={date_field_for_logs}, window=[{start_iso},{end_iso})"
+                failure_notes = f"date_field={date_field_for_logs}, since={since_display}"
                 try:
                     record_ingest_run(
                         conn,
                         started_at,
                         finished_at,
                         "failed",
-                        0,
-                        0,
+                        total_inserted,
+                        total_updated,
                         str(exc),
                         failure_notes,
                     )
                     conn.commit()
-                except Exception:  # noqa: BLE001
+                except Exception:
                     conn.rollback()
             print(f"[dob_complaints] Error: {exc}", file=sys.stderr)
             raise
+
+    logging.info("[dob_complaints] Pages fetched: %s", pages)
+    print(
+        f"[dob_complaints] totals downloaded={total_downloaded} inserted={total_inserted} "
+        f"updated={total_updated} skipped={total_skipped}"
+    )
+    suffix = " (dry-run)" if args.dry_run else ""
+    print(f"complaints backfill complete | since={since_display} | rows={total_downloaded}{suffix}")
+
+    if should_refresh:
+        script_dir = Path(__file__).resolve().parent
+        refresh_script = script_dir / "refresh_mv.sh"
+        subprocess.run(["bash", str(refresh_script)], check=True)
 
     return 0
 
@@ -819,11 +899,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    exit_code = main()
-    # --- end of ingestion ---
-    import subprocess, sys, os
-    subprocess.run(
-        [sys.executable, os.path.join(os.path.dirname(__file__), "refresh_mv.py")],
-        check=True,
-    )
-    raise SystemExit(exit_code)
+    raise SystemExit(main())

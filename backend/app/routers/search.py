@@ -39,6 +39,7 @@ async def search(
     q: Optional[str] = Query(None, description="free text address"),
     borough: Optional[str] = Query(None, regex="^(MN|BX|BK|QN|SI)$"),
     zipcode: Optional[str] = Query(None, min_length=5, max_length=5),
+    bbox: Optional[str] = Query(None, description="minLng,minLat,maxLng,maxLat"),
     min_permits: int = 0,
     min_violations: int = 0,
     limit: int = Query(20, ge=1, le=200),
@@ -49,10 +50,9 @@ async def search(
     where_args: List[object] = []
 
     def ph() -> str:
-        """Return a placeholder for the next WHERE arg ($1, $2, ...)."""
         return f"${len(where_args) + 1}"
 
-    # q: use twice in WHERE (ILIKE + trigram)
+    # q used twice in WHERE
     if q:
         p1 = ph(); where_args.append(q)
         p2 = ph(); where_args.append(q)
@@ -74,28 +74,39 @@ async def search(
         p = ph(); where_args.append(min_violations)
         clauses.append(f"violations_count >= {p}")
 
+    # bbox: minLng,minLat,maxLng,maxLat
+    if bbox:
+        try:
+            minLng, minLat, maxLng, maxLat = [float(x) for x in bbox.split(",")]
+        except Exception:
+            raise HTTPException(400, "Invalid bbox; expected minLng,minLat,maxLng,maxLat")
+        p1 = ph(); where_args.append(minLng)
+        p2 = ph(); where_args.append(minLat)
+        p3 = ph(); where_args.append(maxLng)
+        p4 = ph(); where_args.append(maxLat)
+        clauses.append(f"geom_4326 && ST_MakeEnvelope({p1}, {p2}, {p3}, {p4}, 4326)")
+
     base = f"FROM mv_property_search WHERE {' AND '.join(clauses)}"
 
-    # --- total query (WHERE args ONLY) ---
+    # total (WHERE args only)
     sql_total = f"SELECT COUNT(*) {base}"
 
-    # --- rows query (WHERE args + optional similarity + limit/offset) ---
+    # rows (WHERE args + similarity arg (if q) + limit/offset)
     order_by = """
       GREATEST(
         COALESCE(permits_last_filed, '1900-01-01'::date),
         COALESCE(violations_last_issued, '1900-01-01'::date)
       ) DESC
     """
-
     rows_args: List[object] = list(where_args)
 
     if q:
-        # add one more arg for similarity used in ORDER BY (not in total)
+        # similarity extra arg (not part of where_args)
         rows_args.append(q)
-        sim_ph = f"${len(where_args) + 1}"  # similarity uses next placeholder relative to WHERE
-        order_by = order_by + f", similarity(address_key, UPPER(unaccent({sim_ph}))) DESC"
+        sim_ph = f"${len(where_args) + 1}"
+        order_by += f", similarity(address_key, UPPER(unaccent({sim_ph}))) DESC"
 
-    # LIMIT/OFFSET placeholders come after WHERE (+ similarity if present)
+    # limit/offset placeholders are after WHERE (+1 if q)
     rows_args.append(limit)
     rows_args.append(offset)
     lim_ph = f"${len(where_args) + (1 if q else 0) + 1}"
@@ -116,6 +127,7 @@ async def search(
         rows = await conn.fetch(sql_rows, *rows_args)
 
     return {"total": total, "rows": [dict(r) for r in rows]}
+
 
 @router.get("/api/properties/{bbl}", response_model=SearchItem)
 async def property_detail(bbl: str, pool=Depends(get_pool)):
