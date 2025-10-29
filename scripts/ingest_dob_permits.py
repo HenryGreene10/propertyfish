@@ -648,25 +648,32 @@ def normalize_timestamp(value: Any) -> Optional[str]:
         return text
 
 
+def normalize_bbl_token(value: Any) -> Optional[str]:
+    if value in (None, ""):
+        return None
+    digits = "".join(ch for ch in str(value) if ch.isdigit())
+    if len(digits) == 10 and digits[0] in "12345":
+        return digits
+    return None
+
+
 def resolve_bbl(row: Dict[str, Any]) -> Optional[str]:
     primary = row.get("bbl") or row.get("bbl_number")
-    if primary:
-        normalized = normalize_bbl(primary)
-        if normalized:
-            return normalized
+    normalized = normalize_bbl_token(primary)
+    if normalized:
+        return normalized
 
-    borough = row.get("borough") or row.get("borocode") or row.get("boro")
-    block = row.get("block")
-    lot = row.get("lot")
-    if borough and block and lot:
-        borough_digits = "".join(ch for ch in str(borough) if ch.isdigit())
-        block_digits = "".join(ch for ch in str(block) if ch.isdigit())
-        lot_digits = "".join(ch for ch in str(lot) if ch.isdigit())
-        if borough_digits and block_digits and lot_digits:
-            combined = f"{borough_digits}{block_digits.zfill(5)}{lot_digits.zfill(4)}"
-            normalized = normalize_bbl(combined)
-            if normalized:
-                return normalized
+    borough = (
+        row.get("borough")
+        or row.get("borocode")
+        or row.get("boro")
+        or row.get("boroughname")
+    )
+    block = row.get("block") or row.get("block__") or row.get("block_num")
+    lot = row.get("lot") or row.get("lot__") or row.get("lot_num")
+    normalized = normalize_bbl(borough, block, lot)
+    if normalized:
+        return normalized
     return None
 
 
@@ -684,18 +691,33 @@ def normalize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     if not bbl or not job_number:
         return None
 
+    borough_value = (
+        row.get("borough")
+        or row.get("borocode")
+        or row.get("boro")
+        or row.get("boroughname")
+    )
+    borough_clean = str(borough_value).strip().upper() if borough_value else None
+    issuance_date = normalize_date(row.get("issuance_date") or row.get("issued_date"))
+    latest_status_date = normalize_date(
+        row.get("latest_status_date") or row.get("status_date")
+    )
+
     payload: Dict[str, Any] = {
         "bbl": bbl,
         "job_number": job_number,
+        "borough": borough_clean,
         "job_type": row.get("job_type") or row.get("jobtype"),
         "status": row.get("status") or row.get("current_status"),
         "filing_date": normalize_date(row.get("filing_date") or row.get("filed_date")),
-        "issued_date": normalize_date(row.get("issued_date") or row.get("issuance_date")),
+        "issuance_date": issuance_date,
+        "latest_status_date": latest_status_date,
         "description": row.get("description"),
         "last_update": normalize_timestamp(
             row.get("last_update") or row.get("lastupdatedate") or row.get("latest_status_date")
         ),
         "source_row_id": row.get(":id") or row.get("source_row_id"),
+        "raw": json.dumps(row, sort_keys=True),
     }
     return payload
 
@@ -703,11 +725,19 @@ def normalize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 def is_record_recent(record: Dict[str, Any], since_dt: datetime) -> bool:
     candidates: List[datetime] = []
 
-    issued_text = record.get("issued_date")
+    issued_text = record.get("issuance_date")
     if issued_text:
         try:
             issued_dt = datetime.strptime(issued_text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
             candidates.append(issued_dt)
+        except ValueError:
+            pass
+
+    latest_status_text = record.get("latest_status_date")
+    if latest_status_text:
+        try:
+            latest_dt = datetime.strptime(latest_status_text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            candidates.append(latest_dt)
         except ValueError:
             pass
 
@@ -732,42 +762,50 @@ def upsert_records(conn, records: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
     updated = 0
     sql = """
         INSERT INTO dob_permits (
-            bbl,
             job_number,
+            bbl,
+            borough,
             job_type,
             status,
             filing_date,
-            issued_date,
+            latest_status_date,
             description,
             last_update,
-            source_row_id
+            source_row_id,
+            raw
         )
         VALUES (
-            %(bbl)s,
             %(job_number)s,
+            %(bbl)s,
+            %(borough)s,
             %(job_type)s,
             %(status)s,
             %(filing_date)s,
-            %(issued_date)s,
+            %(latest_status_date)s,
             %(description)s,
             %(last_update)s,
-            %(source_row_id)s
+            %(source_row_id)s,
+            %(raw)s::jsonb
         )
-        ON CONFLICT (bbl, job_number) DO UPDATE SET
+        ON CONFLICT (job_number) DO UPDATE SET
+            bbl = EXCLUDED.bbl,
+            borough = EXCLUDED.borough,
             job_type = EXCLUDED.job_type,
             status = EXCLUDED.status,
             filing_date = EXCLUDED.filing_date,
-            issued_date = EXCLUDED.issued_date,
+            latest_status_date = EXCLUDED.latest_status_date,
             description = EXCLUDED.description,
             last_update = EXCLUDED.last_update,
-            source_row_id = COALESCE(EXCLUDED.source_row_id, dob_permits.source_row_id)
+            source_row_id = COALESCE(EXCLUDED.source_row_id, dob_permits.source_row_id),
+            raw = EXCLUDED.raw,
+            updated_at = now()
         RETURNING (xmax = 0) AS inserted_flag
     """
     with conn.cursor() as cur:
         for record in records:
             cur.execute(sql, record)
             flag = cur.fetchone()
-            if flag and flag[0]:
+            if bool(flag):
                 inserted += 1
             else:
                 updated += 1
@@ -875,18 +913,32 @@ def ingest() -> int:
     columns = client.get_view_columns()
     available_map = build_available_map(columns)
 
-    filter_candidates = [
-        "last_update",
-        "lastupdatedate",
-        "latest_status_date",
-        "issuance_date",
-        "issued_date",
-    ]
+    date_field_env = (
+        os.getenv("PERMITS_DATE_FIELD")
+        or os.getenv("DOB_PERMITS_DATE_FIELD")
+        or "issuance_date"
+    )
     filter_fields: List[str] = []
-    for candidate in filter_candidates:
-        actual = available_map.get(candidate.lower())
-        if actual:
-            filter_fields.append(actual)
+    date_field_actual = available_map.get(date_field_env.lower())
+    if date_field_actual:
+        filter_fields.append(date_field_actual)
+    else:
+        fallback_candidates = [
+            "last_update",
+            "lastupdatedate",
+            "latest_status_date",
+            "issued_date",
+            "issuance_date",
+        ]
+        seen_fallback: set[str] = set()
+        for candidate in fallback_candidates:
+            key = candidate.lower()
+            if key in seen_fallback:
+                continue
+            seen_fallback.add(key)
+            actual = available_map.get(key)
+            if actual:
+                filter_fields.append(actual)
 
     where_clause: Optional[str]
     if filter_fields:
@@ -900,8 +952,9 @@ def ingest() -> int:
             file=sys.stderr,
         )
 
+    preferred_order_field = date_field_actual
     order_field = filter_fields[0] if filter_fields else (
-        available_map.get("issuance_date")
+        preferred_order_field
         or available_map.get("issued_date")
         or available_map.get("last_update")
         or available_map.get("job_number")

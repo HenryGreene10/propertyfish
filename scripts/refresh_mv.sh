@@ -1,4 +1,6 @@
+#!/usr/bin/env bash
 set -euo pipefail
-docker exec -it propertyfish-postgres \
-  psql -U postgres -d propertyfish \
-  -c "REFRESH MATERIALIZED VIEW CONCURRENTLY mv_property_search;"
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+REFRESH MATERIALIZED VIEW CONCURRENTLY mv_permit_agg;
+REFRESH MATERIALIZED VIEW property_search;
+SQL
