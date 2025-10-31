@@ -21,7 +21,8 @@ from scripts.util_bbl import normalize_bbl
 
 SOURCE_NAME = "dob_permits_v1"
 PAGE_SIZE = 5000
-DAYS_BACK_DEFAULT = 720
+DAYS_BACK_DEFAULT = 365
+DEFAULT_LIMIT = 50000
 MAX_RETRIES = 5
 RETRY_STATUS = {429, 500, 502, 503, 504}
 BACKOFF_INITIAL_SECONDS = 2.0
@@ -48,6 +49,8 @@ DEFAULT_SELECT_FIELDS = [
     "current_status",
     "filing_date",
     "filed_date",
+    "status_date",
+    "latest_action_date",
     "issued_date",
     "issuance_date",
     "description",
@@ -63,6 +66,22 @@ DEFAULT_SELECT_FIELDS = [
 ]
 
 EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def ensure_watermark_table(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS public.ingestion_watermarks (
+                source text NOT NULL,
+                window_start timestamptz NOT NULL,
+                window_end timestamptz,
+                last_offset integer,
+                last_run timestamptz,
+                CONSTRAINT ux_ingestion_watermarks_source_window
+                    UNIQUE (source, window_start)
+            );
+        """)
+    conn.commit()
 
 
 class SocrataError(Exception):
@@ -162,27 +181,36 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--days",
         type=int,
-        default=720,
+        default=DAYS_BACK_DEFAULT,
         help=(
             "Fetch permits updated within the past N days when --since is omitted "
-            "(default 720)."
+            f"(default {DAYS_BACK_DEFAULT})."
         ),
     )
     parser.add_argument(
-        "--date-field",
-        default="issuance_date",
-        help="Use this column as the incremental field (default: issuance_date).",
+        "--until",
+        help="Fetch permits before this ISO date (exclusive at midnight).",
     )
     parser.add_argument(
-        "--recent",
+        "--date-field",
+        default="latest_status_date",
+        help="Use this column as the incremental field (default: latest_status_date).",
+    )
+    parser.add_argument(
+        "--limit",
         type=int,
-        default=50000,
-        help="Fallback row count when text fields need client-side filtering (default 50000).",
+        default=DEFAULT_LIMIT,
+        help=f"Maximum rows to fetch from Socrata (default {DEFAULT_LIMIT}).",
     )
     parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Run discovery and counting only; do not write to the database.",
+    )
+    parser.add_argument(
+        "--print-query",
+        action="store_true",
+        help="Echo the generated Socrata WHERE clause.",
     )
     parser.add_argument(
         "--diagnose-date-fields",
@@ -193,8 +221,8 @@ def parse_args() -> argparse.Namespace:
 
     if args.days is not None and args.days <= 0:
         parser.error("--days must be positive")
-    if args.recent is not None and args.recent < 0:
-        parser.error("--recent must be non-negative")
+    if args.limit is not None and args.limit < 1:
+        parser.error("--limit must be >= 1")
     return args
 
 
@@ -699,9 +727,10 @@ def normalize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     )
     borough_clean = str(borough_value).strip().upper() if borough_value else None
     issuance_date = normalize_date(row.get("issuance_date") or row.get("issued_date"))
-    latest_status_date = normalize_date(
-        row.get("latest_status_date") or row.get("status_date")
-    )
+    latest_status_date = normalize_date(row.get("latest_status_date") or row.get("status_date"))
+    latest_action_date = normalize_date(row.get("latest_action_date"))
+    status_date = normalize_date(row.get("status_date"))
+    filed_date = normalize_date(row.get("filed_date"))
 
     payload: Dict[str, Any] = {
         "bbl": bbl,
@@ -712,6 +741,9 @@ def normalize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "filing_date": normalize_date(row.get("filing_date") or row.get("filed_date")),
         "issuance_date": issuance_date,
         "latest_status_date": latest_status_date,
+        "latest_action_date": latest_action_date,
+        "status_date": status_date,
+        "filed_date": filed_date,
         "description": row.get("description"),
         "last_update": normalize_timestamp(
             row.get("last_update") or row.get("lastupdatedate") or row.get("latest_status_date")
@@ -720,41 +752,6 @@ def normalize_row(row: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         "raw": json.dumps(row, sort_keys=True),
     }
     return payload
-
-
-def is_record_recent(record: Dict[str, Any], since_dt: datetime) -> bool:
-    candidates: List[datetime] = []
-
-    issued_text = record.get("issuance_date")
-    if issued_text:
-        try:
-            issued_dt = datetime.strptime(issued_text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-            candidates.append(issued_dt)
-        except ValueError:
-            pass
-
-    latest_status_text = record.get("latest_status_date")
-    if latest_status_text:
-        try:
-            latest_dt = datetime.strptime(latest_status_text, "%Y-%m-%d").replace(tzinfo=timezone.utc)
-            candidates.append(latest_dt)
-        except ValueError:
-            pass
-
-    updated_text = record.get("last_update")
-    if updated_text:
-        try:
-            parsed = datetime.fromisoformat(updated_text.replace("Z", "+00:00"))
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
-            candidates.append(parsed.astimezone(timezone.utc))
-        except ValueError:
-            pass
-
-    if not candidates:
-        return False
-
-    return any(candidate >= since_dt for candidate in candidates)
 
 
 def upsert_records(conn, records: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
@@ -768,7 +765,11 @@ def upsert_records(conn, records: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
             job_type,
             status,
             filing_date,
+            filed_date,
+            issuance_date,
+            status_date,
             latest_status_date,
+            latest_action_date,
             description,
             last_update,
             source_row_id,
@@ -781,21 +782,29 @@ def upsert_records(conn, records: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
             %(job_type)s,
             %(status)s,
             %(filing_date)s,
+            %(filed_date)s,
+            %(issuance_date)s,
+            %(status_date)s,
             %(latest_status_date)s,
+            %(latest_action_date)s,
             %(description)s,
             %(last_update)s,
             %(source_row_id)s,
             %(raw)s::jsonb
         )
         ON CONFLICT (job_number) DO UPDATE SET
-            bbl = EXCLUDED.bbl,
-            borough = EXCLUDED.borough,
-            job_type = EXCLUDED.job_type,
+            bbl = COALESCE(EXCLUDED.bbl, dob_permits.bbl),
+            borough = COALESCE(EXCLUDED.borough, dob_permits.borough),
+            job_type = COALESCE(EXCLUDED.job_type, dob_permits.job_type),
             status = EXCLUDED.status,
-            filing_date = EXCLUDED.filing_date,
-            latest_status_date = EXCLUDED.latest_status_date,
-            description = EXCLUDED.description,
-            last_update = EXCLUDED.last_update,
+            latest_action_date = COALESCE(EXCLUDED.latest_action_date, dob_permits.latest_action_date),
+            latest_status_date = COALESCE(EXCLUDED.latest_status_date, dob_permits.latest_status_date),
+            status_date = COALESCE(EXCLUDED.status_date, dob_permits.status_date),
+            issuance_date = COALESCE(EXCLUDED.issuance_date, dob_permits.issuance_date),
+            filing_date = COALESCE(EXCLUDED.filing_date, dob_permits.filing_date),
+            filed_date = COALESCE(EXCLUDED.filed_date, dob_permits.filed_date),
+            description = COALESCE(EXCLUDED.description, dob_permits.description),
+            last_update = NOW(),
             source_row_id = COALESCE(EXCLUDED.source_row_id, dob_permits.source_row_id),
             raw = EXCLUDED.raw,
             updated_at = now()
@@ -817,10 +826,19 @@ def update_watermark(conn, finished_at, window_start_dt=None, window_end_dt=None
     Record last_run in ingestion_watermarks using the (source, window_start) PK.
     If no window dates are passed, use today's date for both.
     """
-    from datetime import datetime, timezone, date
+    from datetime import datetime, timezone
 
-    ws = (window_start_dt.date() if window_start_dt else date.today())
-    we = (window_end_dt.date() if window_end_dt else ws)
+    ws = window_start_dt or finished_at
+    we = window_end_dt or ws
+    if ws.tzinfo is None:
+        ws = ws.replace(tzinfo=timezone.utc)
+    else:
+        ws = ws.astimezone(timezone.utc)
+    if we.tzinfo is None:
+        we = we.replace(tzinfo=timezone.utc)
+    else:
+        we = we.astimezone(timezone.utc)
+    finished_ts = finished_at if finished_at.tzinfo else finished_at.replace(tzinfo=timezone.utc)
 
     with conn.cursor() as cur:
         cur.execute(
@@ -831,7 +849,7 @@ def update_watermark(conn, finished_at, window_start_dt=None, window_end_dt=None
             SET window_end = EXCLUDED.window_end,
                 last_run   = EXCLUDED.last_run
             """,
-            (SOURCE_NAME, ws, we, 0, finished_at),
+            (SOURCE_NAME, ws, we, 0, finished_ts),
         )
     conn.commit()
 
@@ -914,88 +932,80 @@ def ingest() -> int:
         return 0
 
     since_dt = determine_since_dt(args)
-    since_soql = format_soql_timestamp(since_dt)
-    since_display = since_dt.date().isoformat()
-    if args.since:
-        print(f"[dob_permits] --since provided; overriding --days={args.days}")
-    else:
-        print(f"[dob_permits] --since not provided; using --days={args.days}")
-    print(f"[dob_permits] Starting ingest since {since_display}")
 
     columns = client.get_view_columns()
     available_map = build_available_map(columns)
 
-    date_field_env = (
-        os.getenv("PERMITS_DATE_FIELD")
-        or os.getenv("DOB_PERMITS_DATE_FIELD")
-        or "issuance_date"
-    )
-    filter_fields: List[str] = []
-    date_field_actual = available_map.get(date_field_env.lower())
-    if date_field_actual:
-        filter_fields.append(date_field_actual)
-    else:
-        fallback_candidates = [
-            "last_update",
-            "lastupdatedate",
-            "latest_status_date",
-            "issued_date",
-            "issuance_date",
-        ]
-        seen_fallback: set[str] = set()
-        for candidate in fallback_candidates:
-            key = candidate.lower()
-            if key in seen_fallback:
-                continue
-            seen_fallback.add(key)
-            actual = available_map.get(key)
-            if actual:
-                filter_fields.append(actual)
-
-    where_clause: Optional[str]
-    if filter_fields:
-        comparisons = [f"{field} >= '{since_soql}'" for field in filter_fields]
-        where_clause = "(" + " OR ".join(comparisons) + ")"
-        print(f"[dob_permits] Applying filters on: {', '.join(filter_fields)}")
-    else:
-        where_clause = None
-        print(
-            "[dob_permits] Warning: no known incremental fields found; relying on client-side filtering.",
-            file=sys.stderr,
+    date_field_input = args.date_field or "latest_status_date"
+    date_field_actual = available_map.get(date_field_input.lower())
+    if not date_field_actual:
+        available = ", ".join(sorted(available_map.values()))
+        raise SystemExit(
+            f"[dob_permits] Date field '{date_field_input}' not found in Socrata metadata. "
+            f"Available columns: {available}"
         )
 
-    preferred_order_field = date_field_actual
-    order_field = filter_fields[0] if filter_fields else (
-        preferred_order_field
-        or available_map.get("issued_date")
-        or available_map.get("last_update")
-        or available_map.get("job_number")
-    )
-    if order_field:
-        print(f"[dob_permits] Ordering by {order_field}")
+    if args.since:
+        window_start_dt = floor_to_midnight(parse_datetime_arg(args.since))
     else:
-        print("[dob_permits] No order field resolved; using API default order.", file=sys.stderr)
+        window_start_dt = since_dt
 
-    page_size = PAGE_SIZE
+    if args.until:
+        window_end_dt = floor_to_midnight(parse_datetime_arg(args.until))
+    else:
+        window_end_dt = floor_to_midnight(datetime.now(timezone.utc) + timedelta(days=1))
+    if window_end_dt <= window_start_dt:
+        window_end_dt = window_start_dt + timedelta(days=1)
+
+    since_str = args.since or window_start_dt.strftime("%Y-%m-%d")
+    until_str = args.until or window_end_dt.strftime("%Y-%m-%d")
+    where_clause = (
+        f"{date_field_actual} >= '{since_str}T00:00:00' "
+        f"AND {date_field_actual} < '{until_str}T00:00:00'"
+    )
+    if args.print_query:
+        print("WHERE:", where_clause)
+
+    lat_field, lon_field = _resolve_coordinate_fields(columns)
+    select_fields = build_select_fields(date_field_actual, available_map, lat_field, lon_field)
+
+    order_field = date_field_actual
+    if args.since:
+        print(f"[dob_permits] --since provided; overriding --days={args.days}")
+    else:
+        print(f"[dob_permits] --since not provided; using --days={args.days}")
+    print(f"[dob_permits] Using date_field={date_field_actual}")
+    print(f"[dob_permits] Starting ingest window [{since_str}, {until_str})")
+    print(f"[dob_permits] Ordering by {order_field}")
+
+    page_size = min(PAGE_SIZE, args.limit)
     min_sleep_ms, max_sleep_ms = get_polite_bounds()
     total_downloaded = 0
     total_inserted = 0
     total_updated = 0
     total_skipped = 0
     should_refresh = False
+    dry_run_samples: List[Dict[str, Any]] = []
+    total_ready = 0
+    remaining = args.limit
 
     conn_factory = get_connection_factory()
     started_at = datetime.now(timezone.utc)
 
     with conn_factory() as conn:
+        if not args.dry_run:
+            ensure_watermark_table(conn)
+            conn.commit()
         try:
             offset = 0
-            while True:
-                params: Dict[str, Any] = {"$limit": page_size, "$offset": offset}
-                if where_clause:
-                    params["$where"] = where_clause
+            while remaining > 0:
+                limit_batch = min(page_size, remaining)
+                params: Dict[str, Any] = {"$limit": limit_batch, "$offset": offset}
+                params["$where"] = where_clause
                 if order_field:
                     params["$order"] = f"{order_field} ASC"
+                if select_fields:
+                    params["$select"] = ", ".join(select_fields)
                 rows = client.query_resource(params)
                 batch_count = len(rows)
                 if batch_count == 0:
@@ -1008,29 +1018,32 @@ def ingest() -> int:
                     if not normalized:
                         total_skipped += 1
                         continue
-                    if not is_record_recent(normalized, since_dt):
-                        total_skipped += 1
-                        continue
                     normalized_rows.append(normalized)
 
-                if normalized_rows and not args.dry_run:
+                if args.dry_run:
+                    total_ready += len(normalized_rows)
+                    if len(dry_run_samples) < 3:
+                        needed = 3 - len(dry_run_samples)
+                        dry_run_samples.extend(normalized_rows[:needed])
+                elif normalized_rows:
                     inserted, updated = upsert_records(conn, normalized_rows)
                     total_inserted += inserted
                     total_updated += updated
                     conn.commit()
-                elif args.dry_run:
-                    pass
-                else:
-                    conn.commit()
 
-                offset += page_size
-                if batch_count < page_size:
+                remaining -= batch_count
+                offset += limit_batch
+                if batch_count < limit_batch:
+                    break
+                if remaining <= 0:
                     break
                 polite_sleep(min_sleep_ms, max_sleep_ms)
 
             finished_at = datetime.now(timezone.utc)
-            if not args.dry_run:
-                update_watermark(conn, finished_at)
+            if args.dry_run:
+                conn.rollback()
+            else:
+                update_watermark(conn, finished_at, window_start_dt, window_end_dt)
                 record_ingest_run(conn, started_at, finished_at, "success", total_inserted, total_updated, None)
                 conn.commit()
                 should_refresh = True
@@ -1048,11 +1061,24 @@ def ingest() -> int:
             print(f"[dob_permits] Error: {exc}", file=sys.stderr)
             raise
 
+    if args.dry_run:
+        print(
+            f"[dob_permits] dry-run downloaded={total_downloaded} normalized={total_ready} "
+            f"skipped={total_skipped}"
+        )
+        if dry_run_samples:
+            print("[dob_permits] sample rows:")
+            for sample in dry_run_samples:
+                print(json.dumps(sample, indent=2, sort_keys=True))
+        return 0
+
     print(
         f"[dob_permits] totals downloaded={total_downloaded} inserted={total_inserted} "
         f"updated={total_updated} skipped={total_skipped}"
     )
-    print(f"permits backfill complete | since={since_display} | rows={total_downloaded}")
+    print(
+        f"permits backfill complete | window=[{since_str}, {until_str}) | rows={total_downloaded}"
+    )
 
     if should_refresh:
         script_dir = Path(__file__).resolve().parent
