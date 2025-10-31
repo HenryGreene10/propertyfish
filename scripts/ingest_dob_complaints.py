@@ -22,15 +22,17 @@ if str(REPO_ROOT) not in sys.path:
 
 SOURCE_NAME = "dob_complaints_v1"
 DEFAULT_RESOURCE_ID = "eabe-havv"
-PAGE_SIZE = 5000
-DEFAULT_DAYS = 720
+PAGE_SIZE = 25000
+UPSERT_CHUNK_SIZE = 5000
+DEFAULT_DAYS = 365
 SAMPLE_LIMIT = 200
 DATASET_MAX_SAMPLE_LIMIT = 2000
 MAX_RETRIES = 5
 RETRY_STATUS = {429, 500, 502, 503, 504}
 BACKOFF_INITIAL_SECONDS = 2.0
 BACKOFF_MAX_SECONDS = 60.0
-REQUEST_TIMEOUT = 60
+BACKOFF_BASE = 1.8
+REQUEST_TIMEOUT = 30
 DEFAULT_SELECT_FIELDS = [
     "date_entered",
     "complaint_number",
@@ -97,7 +99,10 @@ class SocrataClient:
             except HTTPError as exc:
                 body = exc.read().decode("utf-8", errors="replace")
                 if exc.code in RETRY_STATUS and attempt < MAX_RETRIES:
-                    delay = min(BACKOFF_MAX_SECONDS, BACKOFF_INITIAL_SECONDS * (2**attempt))
+                    delay = min(
+                        BACKOFF_MAX_SECONDS,
+                        BACKOFF_INITIAL_SECONDS * (BACKOFF_BASE**attempt),
+                    )
                     time.sleep(delay + random.random())
                     attempt += 1
                     continue
@@ -105,7 +110,10 @@ class SocrataClient:
             except URLError as exc:
                 body = str(getattr(exc, "reason", exc))
                 if attempt < MAX_RETRIES:
-                    delay = min(BACKOFF_MAX_SECONDS, BACKOFF_INITIAL_SECONDS * (2**attempt))
+                    delay = min(
+                        BACKOFF_MAX_SECONDS,
+                        BACKOFF_INITIAL_SECONDS * (BACKOFF_BASE**attempt),
+                    )
                     time.sleep(delay + random.random())
                     attempt += 1
                     continue
@@ -501,7 +509,13 @@ def upsert_records(conn, records: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
                 "dobrundate": record.get("dobrundate"),
             }
             cur.execute(sql, payload)
-            inserted_flag = cur.fetchone()[0]
+            row = cur.fetchone()
+            if row is None:
+                inserted_flag = False
+            elif isinstance(row, dict):
+                inserted_flag = bool(row.get("inserted_flag"))
+            else:
+                inserted_flag = bool(row[0])
             if inserted_flag:
                 inserted += 1
             else:
@@ -513,16 +527,81 @@ def upsert_records(conn, records: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
 
 
 
-def update_watermark(conn, timestamp: datetime) -> None:
+def ensure_watermark_table(conn) -> None:
     with conn.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO ingestion_watermarks (source, last_run)
-            VALUES (%s, %s)
-            ON CONFLICT (source) DO UPDATE SET last_run = EXCLUDED.last_run
-            """,
-            (SOURCE_NAME, timestamp),
+        CREATE TABLE IF NOT EXISTS ingestion_watermarks (
+            source       text NOT NULL,
+            window_start date  NOT NULL,
+            window_end   date  NOT NULL,
+            last_offset  integer NOT NULL DEFAULT 0,
+            last_run     timestamptz,
+            notes        text,
+            CONSTRAINT ingestion_watermarks_pk PRIMARY KEY (source, window_start)
+        );
+        """
         )
+    conn.commit()
+
+
+def get_window_offset(conn, window_start_dt: datetime, window_end_dt: datetime) -> int:
+    """Return last_offset for (source, window_start). 0 if none."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT COALESCE(last_offset, 0) AS last_offset
+            FROM ingestion_watermarks
+            WHERE source = %s AND window_start = %s
+            LIMIT 1
+        """,
+            (SOURCE_NAME, window_start_dt.date()),
+        )
+        row = cur.fetchone()
+        if not row:
+            return 0
+        if isinstance(row, dict):
+            return int(row.get("last_offset", 0) or 0)
+        return int((row[0] if len(row) else 0) or 0)
+
+
+def upsert_window_offset(
+    conn,
+    window_start_dt: datetime,
+    window_end_dt: datetime,
+    last_offset: int,
+) -> None:
+    """Upsert watermark for (source, window_start)."""
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            INSERT INTO ingestion_watermarks (source, window_start, window_end, last_offset, last_run)
+            VALUES (%s, %s, %s, %s, NOW())
+            ON CONFLICT (source, window_start) DO UPDATE
+            SET window_end  = EXCLUDED.window_end,
+                last_offset = EXCLUDED.last_offset,
+                last_run    = NOW()
+        """,
+            (SOURCE_NAME, window_start_dt.date(), window_end_dt.date(), int(last_offset)),
+        )
+    conn.commit()
+
+
+def _next_month_start(day: datetime) -> datetime:
+    year = day.year + (1 if day.month == 12 else 0)
+    month = 1 if day.month == 12 else day.month + 1
+    return datetime(year, month, 1, tzinfo=timezone.utc)
+
+
+def build_month_windows(start_dt: datetime, end_dt: datetime) -> List[Tuple[datetime, datetime]]:
+    windows: List[Tuple[datetime, datetime]] = []
+    current = start_dt
+    while current < end_dt:
+        next_month = _next_month_start(current)
+        window_end = min(next_month, end_dt)
+        windows.append((current, window_end))
+        current = window_end
+    return windows
 
 
 def ingest_runs_has_notes(conn) -> bool:
@@ -633,8 +712,6 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
     started_at = datetime.now(timezone.utc)
     since_dt = determine_since_dt(args)
     since_display = since_dt.date().isoformat()
-    since_naive = since_dt.replace(tzinfo=None)
-    since_soql = format_soql_timestamp(since_dt)
 
     if args.since:
         logging.info("[dob_complaints] --since provided; overriding --days=%s", args.days)
@@ -672,11 +749,8 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
             filter_fields.append(actual)
 
     if filter_fields:
-        comparisons = [f"{field} >= '{since_soql}'" for field in filter_fields]
-        where_clause: Optional[str] = "(" + " OR ".join(comparisons) + ")"
         logging.info("[dob_complaints] Applying filters on: %s", ", ".join(filter_fields))
     else:
-        where_clause = None
         logging.warning(
             "[dob_complaints] No filter fields available; relying on client-side filtering."
         )
@@ -700,7 +774,16 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
     should_refresh = False
     latest_processed: Optional[datetime] = None
 
+    today_floor = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_dt = today_floor + timedelta(days=1)
+    if since_dt >= end_dt:
+        since_dt = today_floor
+    windows = build_month_windows(since_dt, end_dt)
+    if not windows:
+        windows = [(since_dt, end_dt)]
+
     with conn_factory() as conn:
+        ensure_watermark_table(conn)
         try:
             crosswalk_available = False
             warned_crosswalk_missing = False
@@ -714,122 +797,208 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
                     logging.warning("[dob_complaints] BIN→BBL mapping skipped (pad_bin_bbl not found).")
                     warned_crosswalk_missing = True
 
-            offset = 0
-            while True:
-                params: Dict[str, Any] = {
-                    "$select": ",".join(select_fields),
-                    "$limit": page_size,
-                    "$offset": offset,
-                }
-                if where_clause:
-                    params["$where"] = where_clause
-                if order_field:
-                    params["$order"] = f"{order_field} ASC"
+            for window_start_dt, window_end_dt in windows:
+                window_label = f"{window_start_dt.date()}->{window_end_dt.date()}"
+                offset = get_window_offset(conn, window_start_dt, window_end_dt)
+                offset = max(offset, 0)
 
-                rows = client.query_resource(params)
-                if not rows:
-                    break
+                window_start_iso = format_soql_timestamp(window_start_dt)
+                window_end_iso = format_soql_timestamp(window_end_dt)
+                window_start_naive = window_start_dt.replace(tzinfo=None)
+                window_end_naive = window_end_dt.replace(tzinfo=None)
 
-                pages += 1
-                batch_count = len(rows)
-                total_downloaded += batch_count
+                if filter_fields:
+                    window_conditions = [
+                        f"{field} >= '{window_start_iso}' AND {field} < '{window_end_iso}'"
+                        for field in filter_fields
+                    ]
+                    window_where_clause: Optional[str] = "(" + " OR ".join(window_conditions) + ")"
+                else:
+                    window_where_clause = None
 
-                bin_to_bbl: Dict[int, int] = {}
-                bins_seen: set[int] = set()
-                if crosswalk_available:
-                    for row in rows:
-                        try:
-                            bin_raw = row.get("bin")
-                            bin_int = int(bin_raw) if bin_raw not in (None, "") else None
-                        except Exception:
-                            bin_int = None
-                        if bin_int is not None:
-                            bins_seen.add(bin_int)
-                    if bins_seen:
-                        try:
-                            bin_to_bbl = map_bins_to_bbl(conn, list(bins_seen))
-                        except Exception as exc:
-                            logging.warning("[dob_complaints] BIN→BBL mapping unavailable: %r", exc)
-                            crosswalk_available = False
-                            bin_to_bbl = {}
-                            if not warned_crosswalk_missing:
-                                logging.warning("[dob_complaints] BIN→BBL mapping skipped.")
-                                warned_crosswalk_missing = True
+                logging.info(
+                    "[dob_complaints] Processing window %s starting offset=%d",
+                    window_label,
+                    offset,
+                )
 
-                normalized_rows: List[Dict[str, Any]] = []
-                for row in rows:
-                    dt_value = _parse_dt_safe(row.get(date_field))
-                    if dt_value is None or dt_value < since_naive:
-                        total_skipped += 1
-                        continue
+                current_offset = offset
+                window_pages = 0
 
-                    complaint_number = row.get("complaint_number")
-                    if not complaint_number:
-                        total_skipped += 1
-                        continue
-                    complaint_id = str(complaint_number).strip()
-                    if not complaint_id:
-                        total_skipped += 1
-                        continue
+                try:
+                    while True:
+                        current_offset = offset
+                        params: Dict[str, Any] = {
+                            "$select": ",".join(select_fields),
+                            "$limit": page_size,
+                            "$offset": current_offset,
+                        }
+                        if window_where_clause:
+                            params["$where"] = window_where_clause
+                        if order_field:
+                            params["$order"] = f"{order_field} ASC"
 
-                    house_number = (row.get("house_number") or "").strip()
-                    house_street = (row.get("house_street") or "").strip()
-                    zip_code = (row.get("zip_code") or "").strip()
-                    bin_text = (row.get("bin") or "").strip()
+                        rows = client.query_resource(params)
+                        if not rows:
+                            if not args.dry_run:
+                                upsert_window_offset(conn, window_start_dt, window_end_dt, 0)
+                                conn.commit()
+                            break
 
-                    record: Dict[str, Any] = {
-                        "complaint_id": complaint_id,
-                        "status": row.get("status"),
-                        "date_entered": _parse_dt_safe(row.get("date_entered")),
-                        "house_number": house_number or None,
-                        "house_street": house_street or None,
-                        "zip_code": zip_code or None,
-                        "bin": bin_text or None,
-                        "community_board": row.get("community_board"),
-                        "complaint_category": row.get("complaint_category"),
-                        "inspection_date": _parse_dt_safe(row.get("inspection_date")),
-                        "disposition_date": _parse_dt_safe(row.get("disposition_date")),
-                        "dobrundate": _parse_dt_safe(row.get("dobrundate")),
-                    }
+                        window_pages += 1
+                        pages += 1
+                        batch_count = len(rows)
+                        total_downloaded += batch_count
 
-                    if crosswalk_available and bin_text:
-                        try:
-                            bin_int = int(bin_text)
-                        except Exception:
-                            bin_int = None
-                        if bin_int is not None:
-                            record["bbl"] = bin_to_bbl.get(bin_int)
+                        bin_to_bbl: Dict[int, int] = {}
+                        bins_seen: set[int] = set()
+                        if crosswalk_available:
+                            for row in rows:
+                                try:
+                                    bin_raw = row.get("bin")
+                                    bin_int = int(bin_raw) if bin_raw not in (None, "") else None
+                                except Exception:
+                                    bin_int = None
+                                if bin_int is not None:
+                                    bins_seen.add(bin_int)
+                            if bins_seen:
+                                try:
+                                    bin_to_bbl = map_bins_to_bbl(conn, list(bins_seen))
+                                except Exception as exc:
+                                    logging.warning(
+                                        "[dob_complaints] BIN→BBL mapping unavailable; continuing without crosswalk. %r",
+                                        exc,
+                                    )
+                                    crosswalk_available = False
+                                    bin_to_bbl = {}
+                                    if not warned_crosswalk_missing:
+                                        logging.warning("[dob_complaints] BIN→BBL mapping skipped.")
+                                        warned_crosswalk_missing = True
 
-                    normalized_rows.append(record)
+                        skipped_before = total_skipped
+                        normalized_rows: List[Dict[str, Any]] = []
+                        for row in rows:
+                            dt_value = _parse_dt_safe(row.get(date_field))
+                            if (
+                                dt_value is None
+                                or dt_value < window_start_naive
+                                or dt_value >= window_end_naive
+                            ):
+                                total_skipped += 1
+                                continue
 
-                    dt_value_aware = dt_value.replace(tzinfo=timezone.utc)
-                    if latest_processed is None or dt_value_aware > latest_processed:
-                        latest_processed = dt_value_aware
+                            complaint_number = row.get("complaint_number")
+                            if not complaint_number:
+                                total_skipped += 1
+                                continue
+                            complaint_id = str(complaint_number).strip()
+                            if not complaint_id:
+                                total_skipped += 1
+                                continue
 
-                if crosswalk_available and bins_seen and not warned_crosswalk_missing and not bin_to_bbl:
-                    logging.info(
-                        "[dob_complaints] BIN→BBL crosswalk returned no matches for current window."
-                    )
-                    warned_crosswalk_missing = True
+                            house_number = (row.get("house_number") or "").strip()
+                            house_street = (row.get("house_street") or "").strip()
+                            zip_code = (row.get("zip_code") or "").strip()
+                            bin_text = (row.get("bin") or "").strip()
 
-                if normalized_rows and not args.dry_run:
-                    inserted, updated = upsert_records(conn, normalized_rows)
-                    total_inserted += inserted
-                    total_updated += updated
-                    conn.commit()
+                            record: Dict[str, Any] = {
+                                "complaint_id": complaint_id,
+                                "status": row.get("status"),
+                                "date_entered": _parse_dt_safe(row.get("date_entered")),
+                                "house_number": house_number or None,
+                                "house_street": house_street or None,
+                                "zip_code": zip_code or None,
+                                "bin": bin_text or None,
+                                "community_board": row.get("community_board"),
+                                "complaint_category": row.get("complaint_category"),
+                                "inspection_date": _parse_dt_safe(row.get("inspection_date")),
+                                "disposition_date": _parse_dt_safe(row.get("disposition_date")),
+                                "dobrundate": _parse_dt_safe(row.get("dobrundate")),
+                            }
 
-                offset += batch_count
-                if batch_count < page_size:
-                    break
+                            if crosswalk_available and bin_text:
+                                try:
+                                    bin_int = int(bin_text)
+                                except Exception:
+                                    bin_int = None
+                                if bin_int is not None:
+                                    record["bbl"] = bin_to_bbl.get(bin_int)
+
+                            normalized_rows.append(record)
+
+                            dt_value_aware = dt_value.replace(tzinfo=timezone.utc)
+                            if latest_processed is None or dt_value_aware > latest_processed:
+                                latest_processed = dt_value_aware
+
+                        if (
+                            crosswalk_available
+                            and bins_seen
+                            and not warned_crosswalk_missing
+                            and not bin_to_bbl
+                        ):
+                            logging.info(
+                                "[dob_complaints] BIN→BBL crosswalk returned no matches for current window."
+                            )
+                            warned_crosswalk_missing = True
+
+                        page_inserted = 0
+                        page_updated = 0
+                        if normalized_rows and not args.dry_run:
+                            for start_idx in range(0, len(normalized_rows), UPSERT_CHUNK_SIZE):
+                                chunk = normalized_rows[start_idx : start_idx + UPSERT_CHUNK_SIZE]
+                                inserted, updated = upsert_records(conn, chunk)
+                                page_inserted += inserted
+                                page_updated += updated
+                                total_inserted += inserted
+                                total_updated += updated
+                                conn.commit()
+                            if page_inserted or page_updated:
+                                should_refresh = True
+                        elif args.dry_run:
+                            page_inserted = 0
+                            page_updated = 0
+
+                        page_skipped = total_skipped - skipped_before
+                        print(
+                            "[dob_complaints] window=%s page=%d offset=%d downloaded=%d inserted=%d updated=%d skipped=%d"
+                            % (
+                                window_label,
+                                window_pages,
+                                current_offset,
+                                batch_count,
+                                page_inserted,
+                                page_updated,
+                                page_skipped,
+                            )
+                        )
+
+                        next_offset = 0 if batch_count < page_size else current_offset + batch_count
+                        if not args.dry_run:
+                            upsert_window_offset(conn, window_start_dt, window_end_dt, next_offset)
+                            conn.commit()
+
+                        if batch_count < page_size:
+                            break
+
+                        offset = next_offset
+
+                except KeyboardInterrupt:
+                    if not args.dry_run:
+                        upsert_window_offset(conn, window_start_dt, window_end_dt, current_offset)
+                        conn.commit()
+                    raise
+                except Exception:
+                    if not args.dry_run:
+                        upsert_window_offset(conn, window_start_dt, window_end_dt, current_offset)
+                        conn.commit()
+                    raise
 
             finished_at = datetime.now(timezone.utc)
 
             if args.dry_run:
                 conn.rollback()
             else:
-                watermark_target = latest_processed or finished_at
-                update_watermark(conn, watermark_target)
-                notes_text = f"date_field={date_field}, since={since_display}"
+                notes_text = f"date_field={date_field}, since={since_display}, windows={len(windows)}"
                 record_ingest_run(
                     conn,
                     started_at,
@@ -841,7 +1010,6 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
                     notes_text,
                 )
                 conn.commit()
-                should_refresh = True
         except Exception as exc:
             conn.rollback()
             finished_at = datetime.now(timezone.utc)
@@ -872,7 +1040,7 @@ def ingest(args: argparse.Namespace, client: SocrataClient) -> int:
     suffix = " (dry-run)" if args.dry_run else ""
     print(f"complaints backfill complete | since={since_display} | rows={total_downloaded}{suffix}")
 
-    if should_refresh:
+    if should_refresh and not args.dry_run:
         script_dir = Path(__file__).resolve().parent
         refresh_script = script_dir / "refresh_mv.sh"
         subprocess.run(["bash", str(refresh_script)], check=True)
