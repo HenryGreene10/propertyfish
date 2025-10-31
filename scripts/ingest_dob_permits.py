@@ -812,16 +812,28 @@ def upsert_records(conn, records: Iterable[Dict[str, Any]]) -> Tuple[int, int]:
     return inserted, updated
 
 
-def update_watermark(conn, timestamp: datetime) -> None:
+def update_watermark(conn, finished_at, window_start_dt=None, window_end_dt=None):
+    """
+    Record last_run in ingestion_watermarks using the (source, window_start) PK.
+    If no window dates are passed, use today's date for both.
+    """
+    from datetime import datetime, timezone, date
+
+    ws = (window_start_dt.date() if window_start_dt else date.today())
+    we = (window_end_dt.date() if window_end_dt else ws)
+
     with conn.cursor() as cur:
         cur.execute(
             """
-            INSERT INTO ingestion_watermarks (source, last_run)
-            VALUES (%s, %s)
-            ON CONFLICT (source) DO UPDATE SET last_run = EXCLUDED.last_run
+            INSERT INTO ingestion_watermarks (source, window_start, window_end, last_offset, last_run)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (source, window_start) DO UPDATE
+            SET window_end = EXCLUDED.window_end,
+                last_run   = EXCLUDED.last_run
             """,
-            (SOURCE_NAME, timestamp),
+            (SOURCE_NAME, ws, we, 0, finished_at),
         )
+    conn.commit()
 
 
 def record_ingest_run(
