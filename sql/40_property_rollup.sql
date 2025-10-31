@@ -18,14 +18,6 @@ WITH p AS (
     END AS geom_2263
   FROM public.pluto
 ),
-perm AS (
-  SELECT
-    parcel_bbl AS bbl,
-    COUNT(*)         AS permits_count,
-    MAX(filing_date) AS permits_last_filed
-  FROM public.vw_permits_join_s1
-  GROUP BY parcel_bbl
-),
 viol AS (
   SELECT
     parcel_bbl AS bbl,
@@ -36,10 +28,33 @@ viol AS (
 )
 SELECT
   p.*,
-  COALESCE(perm.permits_count, 0)    AS permits_count,
-  perm.permits_last_filed,
+  COALESCE(pr.permits_count, 0)      AS permits_count,
+  pr.permits_last_filed,
   COALESCE(viol.violations_count, 0) AS violations_count,
   viol.violations_last_issued
 FROM p
-LEFT JOIN perm ON public.bbl_normalize(perm.bbl) = public.bbl_normalize(p.bbl)
+LEFT JOIN (
+  SELECT
+      public.bbl_normalize(dp.bbl) AS bbl,
+      COUNT(*) FILTER (
+        WHERE COALESCE(
+          dp.issuance_date,
+          dp.filing_date,
+          dp.filed_date,
+          dp.status_date,
+          dp.latest_status_date
+        ) IS NOT NULL
+      ) AS permits_count,
+      MAX(
+        COALESCE(
+          dp.issuance_date,
+          dp.filing_date,
+          dp.filed_date,
+          dp.status_date,
+          dp.latest_status_date
+        )
+      ) AS permits_last_filed
+  FROM public.dob_permits dp
+  GROUP BY public.bbl_normalize(dp.bbl)
+) pr ON pr.bbl = public.bbl_normalize(p.bbl)
 LEFT JOIN viol ON public.bbl_normalize(viol.bbl) = public.bbl_normalize(p.bbl);

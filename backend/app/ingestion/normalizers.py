@@ -149,9 +149,10 @@ def normalize_dob_permit(row: Dict[str, Any]) -> Dict[str, Any]:
         or row.get("filed_date")
         or row.get("date")
     )
+    issuance_date = _parse_date(row.get("issuance_date") or row.get("issued_date"))
     latest_status_date = _parse_date(
         row.get("latest_status_date")
-        or row.get("issuance_date")
+        or issuance_date
     )
 
     borough_value = _first_nonempty(
@@ -180,6 +181,7 @@ def normalize_dob_permit(row: Dict[str, Any]) -> Dict[str, Any]:
         "work_type": _clean_string(row.get("work_type")),
         "status": _clean_string(row.get("current_status") or row.get("status")),
         "filing_date": filing_date,
+        "issuance_date": issuance_date,
         "latest_status_date": latest_status_date,
         "estimated_cost": _to_decimal(row.get("estimated_cost")),
         "raw": row,

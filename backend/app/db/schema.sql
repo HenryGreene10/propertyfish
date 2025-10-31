@@ -143,6 +143,7 @@ CREATE TABLE IF NOT EXISTS dob_permits (
   work_type TEXT,
   status TEXT,
   filing_date DATE,
+  issuance_date DATE,
   latest_status_date DATE,
   estimated_cost NUMERIC,
   raw JSONB,

@@ -1,12 +1,14 @@
+DROP VIEW IF EXISTS public.permits_norm CASCADE;
 DROP VIEW IF EXISTS public.vw_permits_norm CASCADE;
 
-CREATE VIEW public.vw_permits_norm AS
+CREATE VIEW public.permits_norm AS
 WITH src AS (
   SELECT
     NULLIF(TRIM(job_number),'')          AS job_number,
     UPPER(NULLIF(TRIM(bbl),''))          AS bbl_text,
     NULLIF(filed_date::text,'')::date    AS filed_date,
     NULLIF(filing_date::text,'')::date   AS filing_date,
+    NULLIF(issuance_date::text,'')::date AS issuance_date,
     NULLIF(status_date::text,'')::date   AS status_date,
     NULLIF(latest_status_date::text,'')::date AS latest_status_date,
     NULLIF(TRIM(status),'')              AS status,
@@ -35,7 +37,19 @@ SELECT
   COALESCE(p.lot,       p.lot_d)       AS lot,
   p.house_no,
   p.street_name,
-  p.filed_date, p.filing_date, p.status_date, p.latest_status_date, p.status,
+  p.filed_date,
+  p.filing_date,
+  p.issuance_date,
+  COALESCE(
+    p.issuance_date,
+    p.filing_date,
+    p.filed_date,
+    p.status_date,
+    p.latest_status_date
+  ) AS issuance_date_norm,
+  p.status_date,
+  p.latest_status_date,
+  p.status,
   p.latitude, p.longitude,
   bm.boro_name,
   CASE WHEN p.house_no IS NULL AND p.street_name IS NULL THEN NULL
