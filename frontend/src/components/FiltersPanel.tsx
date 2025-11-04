@@ -1,59 +1,73 @@
-"use client";
-import { useState } from 'react';
-import type { SearchParams } from '@/lib/fetcher';
+'use client';
 
-export default function FiltersPanel({ onApply }: { onApply: (p: SearchParams) => void }) {
+import { useState } from 'react';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import type { SearchFilters } from '@/lib/types';
+
+type FiltersPanelProps = {
+  onApply: (p: Partial<SearchFilters>) => void;
+};
+
+export default function FiltersPanel({ onApply }: FiltersPanelProps) {
   const [yearMin, setYearMin] = useState<number | ''>('');
   const [floorsMin, setFloorsMin] = useState<number | ''>('');
   const [unitsMin, setUnitsMin] = useState<number | ''>('');
 
+  const handleApply = () => {
+    onApply({
+      limit: 20,
+      offset: 0,
+      year_min: yearMin === '' ? undefined : yearMin,
+      floors_min: floorsMin === '' ? undefined : floorsMin,
+      units_min: unitsMin === '' ? undefined : unitsMin,
+    });
+  };
+
   return (
-    <div className="mb-4 flex gap-3 items-end">
-      <div className="flex flex-col">
-        <label className="text-sm">Year ≥</label>
-        <input
-          className="border rounded px-2 py-1 w-28"
-          value={yearMin}
-          onChange={(e) =>
-            setYearMin(e.target.value === '' ? '' : Number(e.target.value))
-          }
-          placeholder="e.g. 1920"
-        />
+    <div className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 shadow-sm">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:items-end">
+        <div className="flex flex-col gap-1">
+          <label className="text-xs uppercase tracking-wide text-neutral-500">Year ≥</label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={yearMin}
+            onChange={(e) =>
+              setYearMin(e.target.value === '' ? '' : Number(e.target.value))
+            }
+            placeholder="e.g. 1920"
+            className="sm:w-full"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs uppercase tracking-wide text-neutral-500">Floors ≥</label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={floorsMin}
+            onChange={(e) =>
+              setFloorsMin(e.target.value === '' ? '' : Number(e.target.value))
+            }
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-xs uppercase tracking-wide text-neutral-500">Units ≥</label>
+          <Input
+            type="number"
+            inputMode="numeric"
+            value={unitsMin}
+            onChange={(e) =>
+              setUnitsMin(e.target.value === '' ? '' : Number(e.target.value))
+            }
+          />
+        </div>
+        <div className="flex items-end">
+          <Button className="w-full sm:w-auto" onClick={handleApply}>
+            Apply
+          </Button>
+        </div>
       </div>
-      <div className="flex flex-col">
-        <label className="text-sm">Floors ≥</label>
-        <input
-          className="border rounded px-2 py-1 w-24"
-          value={floorsMin}
-          onChange={(e) =>
-            setFloorsMin(e.target.value === '' ? '' : Number(e.target.value))
-          }
-        />
-      </div>
-      <div className="flex flex-col">
-        <label className="text-sm">Units ≥</label>
-        <input
-          className="border rounded px-2 py-1 w-24"
-          value={unitsMin}
-          onChange={(e) =>
-            setUnitsMin(e.target.value === '' ? '' : Number(e.target.value))
-          }
-        />
-      </div>
-      <button
-        className="px-3 py-2 bg-black text-white rounded"
-        onClick={() =>
-          onApply({
-            limit: 20,
-            offset: 0,
-            year_min: yearMin === '' ? undefined : yearMin,
-            floors_min: floorsMin === '' ? undefined : floorsMin,
-            units_min: unitsMin === '' ? undefined : unitsMin,
-          })
-        }
-      >
-        Apply
-      </button>
     </div>
   );
 }

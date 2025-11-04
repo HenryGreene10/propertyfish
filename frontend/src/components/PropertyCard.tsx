@@ -1,11 +1,69 @@
-export default function PropertyCard({ p }: { p: any }) {
+import type { Property } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
+
+type PropertyCardProps = {
+  p: Property;
+  variant?: 'compact' | 'default';
+  className?: string;
+};
+
+function mergeClasses(base: string, extra?: string) {
+  return extra ? `${base} ${extra}` : base;
+}
+
+const VARIANTS = {
+  default: {
+    card: '',
+    title: 'text-lg',
+    subtitle: 'text-sm text-neutral-400',
+    chipWrap: 'flex flex-wrap gap-2',
+    chip: 'rounded-full border border-neutral-700 bg-neutral-800/60 px-3 py-1 text-xs font-medium text-neutral-200',
+    meta: 'text-xs text-neutral-500',
+  },
+  compact: {
+    card: '!px-3 !py-3',
+    title: 'text-base',
+    subtitle: 'text-xs text-neutral-400',
+    chipWrap: 'flex flex-wrap gap-1.5',
+    chip: 'rounded-md border border-neutral-700/70 bg-neutral-800/40 px-2.5 py-0.5 text-[11px] font-medium text-neutral-200',
+    meta: 'text-[11px] text-neutral-500',
+  },
+} satisfies Record<'default' | 'compact', Record<string, string>>;
+
+export default function PropertyCard({
+  p,
+  variant = 'default',
+  className,
+}: PropertyCardProps) {
+  const styles = VARIANTS[variant];
+  const boroughLabel = p.borough_full ?? p.borough ?? '—';
+  const subtitle = [boroughLabel, p.bbl ? `BBL ${p.bbl}` : null].filter(Boolean).join(' • ');
+
+  const metrics = [
+    { label: 'Year', value: p.year_built },
+    { label: 'Floors', value: p.floors },
+    { label: 'Units', value: p.units },
+    { label: 'Permits (12m)', value: p.permit_count_12m },
+  ];
+
   return (
-    <div className="border rounded-lg p-4 shadow-sm">
-      <div className="font-semibold">{p.address ?? 'Unknown address'}</div>
-      <div className="text-sm opacity-80">BBL: {p.bbl}</div>
-      <div className="text-sm mt-1">
-        Year: {p.year_built ?? '—'} · Floors: {p.floors ?? '—'} · Units: {p.units ?? '—'}
-      </div>
-    </div>
+    <Card className={mergeClasses(styles.card, className)}>
+      <CardHeader className="gap-1">
+        <CardTitle className={styles.title}>{p.address || 'Unknown address'}</CardTitle>
+        <div className={styles.subtitle}>{subtitle}</div>
+      </CardHeader>
+      <CardContent className="gap-2">
+        <div className={styles.chipWrap}>
+          {metrics.map(({ label, value }) => (
+            <span key={label} className={styles.chip}>
+              {label}: {value === null || value === undefined || value === '' ? '—' : value}
+            </span>
+          ))}
+        </div>
+        <div className={styles.meta}>
+          Last permit: {p.last_permit ?? '—'}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

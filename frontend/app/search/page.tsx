@@ -4,28 +4,36 @@ import useSWR from 'swr';
 
 import FiltersPanel from '@/components/FiltersPanel';
 import PropertyCard from '@/components/PropertyCard';
-import { searchFetcher, type SearchParams } from '@/lib/fetcher';
+import { getSearch } from '@/lib/api';
+import type { SearchFilters } from '@/lib/types';
 
 export default function SearchPage() {
-  const [params, setParams] = useState<SearchParams>({ limit: 20, offset: 0 });
+  const [filters, setFilters] = useState<Partial<SearchFilters>>({
+    limit: 20,
+    offset: 0,
+  });
 
-  const key = useMemo(() => ['search', params] as const, [JSON.stringify(params)]);
-  const { data, error, isLoading } = useSWR(key, searchFetcher);
+  const key = useMemo(() => ['search', filters] as const, [filters]);
+  const { data, error, isValidating } = useSWR(key, ([, currentFilters]) =>
+    getSearch(currentFilters),
+  );
 
   return (
     <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Search</h1>
-      <FiltersPanel onApply={(p) => setParams(p)} />
-      {isLoading && <div className="text-sm">Loading…</div>}
-      {error && (
-        <div className="text-sm text-red-600">
+      <h1 className="mb-4 text-2xl font-bold">Search</h1>
+      <FiltersPanel onApply={(p) => setFilters(p)} />
+      {isValidating && <div className="text-sm text-neutral-400">Loading…</div>}
+      {error && !isValidating && (
+        <div className="text-sm text-red-500">
           Error: {String((error as Error).message ?? error)}
         </div>
       )}
-      {!isLoading && data?.items?.length === 0 && <div className="text-sm">No results.</div>}
-      <div className="grid md:grid-cols-2 gap-4">
-        {data?.items?.map((p: any) => (
-          <PropertyCard key={p.bbl ?? Math.random()} p={p} />
+      {!error && !isValidating && (data?.results?.length ?? 0) === 0 && (
+        <div className="text-sm text-neutral-400">No results.</div>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {data?.results?.map((p) => (
+          <PropertyCard key={p.bbl} p={p} />
         ))}
       </div>
     </div>
