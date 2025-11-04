@@ -5,10 +5,12 @@ from typing import Any, Dict, Generator, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import resolve, property as property_router, chat, search as search_router
+from pydantic import BaseModel
+
 from app import routes as api_routes
 from app.db.connection import get_conn as get_conn_cm
 from app.ingestion.normalizers import normalize_pluto as normalize_pluto_row
+from app.routers import chat, property as property_router, resolve, search as search_router
 from app.utils.normalize import normalize_borough
 
 app = FastAPI(title="PropertyFish API", version="0.1.0")
