@@ -91,3 +91,5 @@ logs/
 _reports/
 *.log
 data/
+
+*.tsbuildinfo

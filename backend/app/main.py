@@ -15,13 +15,26 @@ from app.utils.normalize import normalize_borough
 
 app = FastAPI(title="PropertyFish API", version="0.1.0")
 
-CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+_cors_origins = {
+    "http://localhost:3000",
+}
+_env_frontend_origin = os.getenv("FRONTEND_ORIGIN")
+if _env_frontend_origin:
+    _cors_origins.add(_env_frontend_origin.strip())
+
+_env_cors = os.getenv("CORS_ORIGINS")
+if _env_cors:
+    _cors_origins.update(
+        origin.strip()
+        for origin in _env_cors.split(",")
+        if origin.strip()
+    )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in CORS_ORIGINS if origin.strip()],
+    allow_origins=sorted(_cors_origins),
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -43,18 +56,6 @@ BOROUGH_CODE_TO_ABBR = {
 BOROUGH_ABBRS = {abbr for abbr, _ in BOROUGH_CODE_TO_ABBR.values()}
 
 logger = logging.getLogger(__name__)
-logger.debug(
-    "Search SELECT columns: address, bbl, borough, borough_full, permit_count, last_permit_date",
-)
-
-
-class SearchResult(BaseModel):
-    bbl: Optional[str] = None
-    address: Optional[str] = None
-    borough: Optional[str] = None
-    borough_full: Optional[str] = None
-    permit_count_12m: Optional[int] = None
-    last_permit_date: Optional[str] = None
 
 
 def normalize_bbl(value: str | int) -> int:
@@ -240,64 +241,139 @@ async def get_property(bbl: str, limit: int = 5):
 
 @app.get("/search")
 def search(
-    q: Optional[str] = None,
-    borough: Optional[str] = Query(None),
-    year_built_gte: Optional[int] = Query(None),
-    year_built_lte: Optional[int] = Query(None),
-    num_floors_gte: Optional[int] = Query(None),
-    num_floors_lte: Optional[int] = Query(None),
-    units_gte: Optional[int] = Query(None),
-    units_lte: Optional[int] = Query(None),
-    has_permits_12m: Optional[bool] = Query(None),
-    has_complaints_12m: Optional[bool] = Query(None),
-    last_sale_date_gte: Optional[str] = Query(None),
-    last_sale_date_lte: Optional[str] = Query(None),
-    limit: int = Query(10, ge=1, le=100),
+    q: Optional[str] = Query(None, description="Free-text query"),
+    borough: Optional[str] = Query(None, description="Comma-separated borough codes"),
+    sort: Optional[str] = Query(None, description="e.g. permit_count:desc"),
+    year_built_gte: Optional[int] = Query(None, ge=0),
+    year_built_lte: Optional[int] = Query(None, ge=0),
+    units_total_gte: Optional[int] = Query(None, ge=0),
+    units_total_lte: Optional[int] = Query(None, ge=0),
+    limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     conn=Depends(get_conn),
 ):
-    borough_token: Optional[str] = None
-    if borough:
-        candidate = borough.strip()
-        if candidate:
-            upper = candidate.upper()
-            if upper not in {"ANY", "ALL"}:
-                code, _ = normalize_borough(upper)
-                if code and code in BOROUGH_CODE_TO_ABBR:
-                    borough_token = BOROUGH_CODE_TO_ABBR[code][0]
-                elif upper in BOROUGH_ABBRS:
-                    borough_token = upper
+    logger.debug(
+        "search params q=%s borough=%s sort=%s limit=%s offset=%s",
+        q,
+        borough,
+        sort,
+        limit,
+        offset,
+    )
 
-    borough_param = borough_token
-    with conn.cursor() as cur:
-        cur.execute(
+    with conn.cursor() as cur_meta:
+        cur_meta.execute(
             """
-            SELECT COUNT(*)::bigint AS total_count
-            FROM public.property_search
-            WHERE (%s::text IS NULL OR UPPER(borough) = %s)
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+              AND table_name = 'property_search'
             """,
-            (borough_param, borough_param),
         )
+        available_columns = {row["column_name"] for row in cur_meta.fetchall()}
+
+    optional_columns = {
+        column for column in {"year_built", "units_total"} if column in available_columns
+    }
+
+    select_columns: List[str] = [
+        "address",
+        "bbl",
+        "borough",
+        "borough_full",
+        "permit_count",
+        "last_permit_date",
+    ]
+    if "year_built" in optional_columns:
+        select_columns.append("year_built")
+    else:
+        select_columns.append("NULL AS year_built")
+    if "units_total" in optional_columns:
+        select_columns.append("units_total")
+    else:
+        select_columns.append("NULL AS units_total")
+
+    where_clauses: List[str] = ["1=1"]
+    params: List[Any] = []
+
+    if q:
+        term = q.strip()
+        if term:
+            like_value = f"%{term}%"
+            where_clauses.append(
+                "(address ILIKE %s OR borough_full ILIKE %s OR CAST(bbl AS TEXT) ILIKE %s)",
+            )
+            params.extend([like_value, like_value, like_value])
+
+    borough_values: List[str] = []
+    if borough:
+        tokens = [token.strip().upper() for token in borough.split(",")]
+        for token in tokens:
+            if not token:
+                continue
+            if token in BOROUGH_ABBRS:
+                borough_values.append(token)
+                continue
+            code, _ = normalize_borough(token)
+            if code and code in BOROUGH_CODE_TO_ABBR:
+                borough_values.append(BOROUGH_CODE_TO_ABBR[code][0])
+        borough_values = sorted({value for value in borough_values if value})
+        if borough_values:
+            placeholders = ", ".join(["%s"] * len(borough_values))
+            where_clauses.append(f"UPPER(borough) IN ({placeholders})")
+            params.extend(borough_values)
+
+    numeric_filters = [
+        ("year_built_gte", ">=", "year_built"),
+        ("year_built_lte", "<=", "year_built"),
+        ("units_total_gte", ">=", "units_total"),
+        ("units_total_lte", "<=", "units_total"),
+    ]
+    for param_name, operator, column in numeric_filters:
+        value = locals().get(param_name)
+        if value is None:
+            continue
+        if column not in optional_columns:
+            logger.debug("Skipping filter %s; column %s not available", param_name, column)
+            continue
+        where_clauses.append(f"{column} {operator} %s")
+        params.append(value)
+
+    sort_mapping = {
+        "permit_count:desc": "permit_count DESC, bbl ASC",
+        "last_permit_date:desc": "last_permit_date DESC NULLS LAST, bbl ASC",
+    }
+    if "year_built" in optional_columns:
+        sort_mapping["year_built:desc"] = "year_built DESC NULLS LAST, bbl ASC"
+
+    order_by_clause = sort_mapping.get(sort or "", "permit_count DESC, bbl ASC")
+
+    where_sql = " AND ".join(where_clauses)
+    where_params = tuple(params)
+
+    logger.debug("search WHERE: %s params=%s", where_sql, where_params)
+    logger.debug("search ORDER BY: %s", order_by_clause)
+
+    count_sql = f"""
+        SELECT COUNT(*)::bigint AS total_count
+        FROM public.property_search
+        WHERE {where_sql}
+    """
+    rows_sql = f"""
+        SELECT {', '.join(select_columns)}
+        FROM public.property_search
+        WHERE {where_sql}
+        ORDER BY {order_by_clause}
+        LIMIT %s OFFSET %s
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(count_sql, where_params)
         count_row = cur.fetchone() or {}
         total = int(count_row.get("total_count") or 0)
 
-        # TODO: Reintroduce year/units filters once property_search exposes them safely.
-        cur.execute(
-            """
-            SELECT
-                address,
-                bbl,
-                borough,
-                borough_full,
-                permit_count,
-                last_permit_date
-            FROM public.property_search
-            WHERE (%s::text IS NULL OR UPPER(borough) = %s)
-            ORDER BY permit_count DESC, bbl ASC
-            LIMIT %s OFFSET %s
-            """,
-            (borough_param, borough_param, limit, offset),
-        )
+        rows_params = where_params + (limit, offset)
+        cur.execute(rows_sql, rows_params)
         rows = cur.fetchall()
 
     results: List[Dict[str, Any]] = []
@@ -316,15 +392,18 @@ def search(
         else:
             permit_count_value = permit_count
 
-        record = SearchResult(
-            bbl=normalized_bbl,
-            address=row["address"],
-            borough=row["borough"],
-            borough_full=row.get("borough_full"),
-            permit_count_12m=permit_count_value if permit_count_value is not None else None,
-            last_permit_date=_to_iso(row.get("last_permit_date")),
+        results.append(
+            {
+                "bbl": normalized_bbl,
+                "address": row.get("address"),
+                "borough": row.get("borough"),
+                "borough_full": row.get("borough_full"),
+                "permit_count_12m": permit_count_value if permit_count_value is not None else None,
+                "last_permit_date": _to_iso(row.get("last_permit_date")),
+                "year_built": row.get("year_built"),
+                "units_total": row.get("units_total"),
+            },
         )
-        results.append(record.model_dump(exclude_none=True))
 
     return {"results": results, "total": total}
 

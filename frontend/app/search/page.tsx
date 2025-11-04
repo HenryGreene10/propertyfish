@@ -1,164 +1,152 @@
 'use client';
 
-import React from 'react';
-import useSWR from 'swr';
+import { useState } from 'react';
 
-import { FiltersPanel } from '@/components/FiltersPanel';
-import { PropertyCard } from '@/components/PropertyCard';
-import { getSearch } from '@/lib/api';
-import type { SearchFilters } from '@/lib/types';
+import FiltersPanel from '@/components/FiltersPanel';
+import PropertyCard from '@/components/PropertyCard';
+import type { SearchCard, SearchFilters } from '@/lib/types';
 
-type Ui = {
-  borough?: string;
-  year_built?: string;
-  num_floors?: string;
-  units_gte?: string;
+type SearchItem = {
+  bbl: string;
+  address: string;
+  borough: string;
+  borough_full?: string | null;
+  zipcode?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  year_built?: number | null;
+  floors?: number | null;
+  units_total?: number | null;
+  permits_last_12m?: number | null;
+  last_permit_date?: string | null;
 };
 
-const BLANK: Ui = {
-  borough: '',
-  year_built: '',
-  num_floors: '',
-  units_gte: '',
+type SearchResponse = {
+  total: number;
+  items: SearchItem[];
 };
 
-const normalize = (filters: Ui): Partial<SearchFilters> => {
-  const normalized: Partial<SearchFilters> = {
-    limit: 20,
-    offset: 0,
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
+
+type BuildSearchParamsArgs = {
+  yearMin?: number;
+  limit?: number;
+  offset?: number;
+  // floorsMin?: number;
+  // unitsMin?: number;
+};
+
+function buildSearchParams({ yearMin, limit, offset }: BuildSearchParamsArgs) {
+  const params = new URLSearchParams();
+
+  if (typeof limit === 'number') {
+    params.set('limit', String(limit));
+  }
+  if (typeof offset === 'number') {
+    params.set('offset', String(offset));
+  }
+  if (typeof yearMin === 'number') {
+    params.set('year_min', String(yearMin));
+  }
+
+  return params;
+}
+
+function toSearchResponse(payload: unknown): SearchResponse {
+  const raw = (payload ?? {}) as {
+    total?: number;
+    items?: SearchItem[];
+    rows?: SearchItem[];
   };
 
-  const borough = filters.borough?.trim();
-  if (borough) {
-    normalized.borough = borough as SearchFilters['borough'];
-  }
+  const items = Array.isArray(raw.items)
+    ? raw.items
+    : Array.isArray(raw.rows)
+      ? raw.rows
+      : [];
+  const total =
+    typeof raw.total === 'number' && Number.isFinite(raw.total)
+      ? raw.total
+      : items.length;
 
-  const year = parseInt(filters.year_built ?? '', 10);
-  if (!Number.isNaN(year)) {
-    normalized.year_built_gte = year;
-    normalized.year_built_lte = year;
-  }
+  return { total, items };
+}
 
-  const floors = parseInt(filters.num_floors ?? '', 10);
-  if (!Number.isNaN(floors)) {
-    normalized.num_floors_gte = floors;
-    normalized.num_floors_lte = floors;
-  }
-
-  const units = parseInt(filters.units_gte ?? '', 10);
-  if (!Number.isNaN(units)) {
-    normalized.units_gte = units;
-  }
-
-  return normalized;
-};
-
-const DEFAULT_FILTERS = normalize(BLANK);
+function mapToCard(item: SearchItem): SearchCard {
+  return {
+    bbl: item.bbl,
+    address: item.address,
+    borough: item.borough as SearchCard['borough'],
+    borough_full: item.borough_full,
+    year_built: item.year_built,
+    floors: item.floors,
+    units_total: item.units_total,
+    permits_last_12m: item.permits_last_12m,
+    last_permit_date: item.last_permit_date,
+  };
+}
 
 export default function SearchPage() {
-  const [ui, setUi] = React.useState<Ui>(() => ({ ...BLANK }));
-  const [appliedUi, setAppliedUi] = React.useState<Ui | null>(null);
-  const [filters, setFilters] = React.useState<Partial<SearchFilters>>(DEFAULT_FILTERS);
-  const filtersRef = React.useRef<Partial<SearchFilters>>(filters);
+  const [results, setResults] = useState<SearchCard[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  React.useEffect(() => {
-    filtersRef.current = filters;
-  }, [filters]);
+  const handleApply = async (nextFilters: Partial<SearchFilters>) => {
+    setHasSearched(true);
+    setIsLoading(true);
+    setError(null);
+    setResults([]);
 
-  const handleUiChange = React.useCallback((next: Ui) => {
-    const sanitized: Ui = {
-      borough: next.borough ?? '',
-      year_built: next.year_built ?? '',
-      num_floors: next.num_floors ?? '',
-      units_gte: next.units_gte ?? '',
-    };
+    const params = buildSearchParams({
+      yearMin: nextFilters.year_min,
+      limit: nextFilters.limit,
+      offset: nextFilters.offset,
+      // floorsMin: nextFilters.floors_min,
+      // unitsMin: nextFilters.units_min,
+    });
+    const qs = params.toString();
+    const url = `${API_BASE}/api/search${qs ? `?${qs}` : ''}`;
 
-    setUi(sanitized);
-  }, []);
-
-  const key = React.useMemo(
-    () => ['search', JSON.stringify(filters)] as const,
-    [filters],
-  );
-  console.debug('[SWR] key =', key);
-
-  const { data, error, isValidating, mutate } = useSWR(
-    key,
-    () => getSearch(filtersRef.current),
-    {
-      revalidateOnFocus: false,
-      revalidateOnMount: false,
-    },
-  );
-
-  const onApply = React.useCallback(() => {
-    const snapshot: Ui = {
-      borough: ui.borough ?? '',
-      year_built: ui.year_built ?? '',
-      num_floors: ui.num_floors ?? '',
-      units_gte: ui.units_gte ?? '',
-    };
-
-    const nextFilters = normalize(snapshot);
-    filtersRef.current = nextFilters;
-    setFilters(nextFilters);
-    setAppliedUi(snapshot);
-
-    console.debug('[UI] Apply pressed → mutate', nextFilters);
-    mutate();
-  }, [mutate, ui.borough, ui.num_floors, ui.units_gte, ui.year_built]);
-
-  const summaryParts: string[] = [];
-  if (appliedUi?.borough) summaryParts.push(`borough=${appliedUi.borough}`);
-  if (appliedUi?.year_built) summaryParts.push(`year=${appliedUi.year_built}`);
-  if (appliedUi?.num_floors) summaryParts.push(`floors=${appliedUi.num_floors}`);
-  if (appliedUi?.units_gte) summaryParts.push(`units≥${appliedUi.units_gte}`);
-  const summary = summaryParts.join(' ');
-
-  const results = data?.results ?? [];
-  const totalCount = data?.total ?? data?.results?.length ?? 0;
-  const hasApplied = Boolean(appliedUi);
-  const showLoading = hasApplied && isValidating;
-  const highlightYear = Boolean(appliedUi?.year_built);
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
+      const data = toSearchResponse(await res.json());
+      setResults(data.items.map(mapToCard));
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to fetch search results';
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
-    <div className="container" style={{ paddingBlock: '32px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '24px' }}>Search</h1>
-
-      <FiltersPanel value={ui} onChange={handleUiChange} onApply={onApply} />
-
-      {!hasApplied && (
-        <p className="muted" style={{ marginBottom: '12px' }}>
-          Set filters and press Apply.
-        </p>
-      )}
-
-      {hasApplied && summary && (
-        <div className="muted" style={{ fontSize: '12px', marginBottom: '12px' }}>
-          {summary}
+    <div className="max-w-5xl mx-auto p-6">
+      <h1 className="mb-4 text-2xl font-bold">Search</h1>
+      <FiltersPanel onApply={handleApply} />
+      {!hasSearched && (
+        <div className="py-6 text-center text-sm text-neutral-500">
+          Enter filters and click Apply to see results.
         </div>
       )}
-
-      {hasApplied && error && !isValidating && (
-        <p className="muted" style={{ marginBottom: '12px' }}>
-          API error.
-        </p>
+      {hasSearched && isLoading && (
+        <div className="text-sm text-neutral-400">Loading…</div>
       )}
-
-      {hasApplied && !error && showLoading && <p>Loading...</p>}
-
-      {hasApplied &&
-        !error &&
-        !isValidating &&
-        (data?.total ?? data?.results?.length ?? 0) === 0 && <p>No results.</p>}
-
-      {hasApplied && !error && !showLoading && totalCount > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {results.map((item) => (
-            <PropertyCard key={item.bbl} item={item} highlightYear={highlightYear} />
-          ))}
-        </div>
+      {hasSearched && error && !isLoading && (
+        <div className="text-sm text-red-500">Error: {error}</div>
       )}
+      {hasSearched && !isLoading && !error && results.length === 0 && (
+        <div className="text-sm text-neutral-400">No results.</div>
+      )}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {results.map((item) => (
+          <PropertyCard key={item.bbl} p={item} />
+        ))}
+      </div>
     </div>
   );
 }
