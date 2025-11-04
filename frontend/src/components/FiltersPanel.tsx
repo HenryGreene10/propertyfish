@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import type { SearchFilters } from '@/lib/types';
@@ -24,8 +24,16 @@ export default function FiltersPanel({ onApply }: FiltersPanelProps) {
     });
   };
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleApply();
+  };
+
   return (
-    <div className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 shadow-sm">
+    <form
+      onSubmit={handleSubmit}
+      className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 shadow-sm"
+    >
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4 sm:items-end">
         <div className="flex flex-col gap-1">
           <label className="text-xs uppercase tracking-wide text-neutral-500">Year ≥</label>
@@ -63,11 +71,11 @@ export default function FiltersPanel({ onApply }: FiltersPanelProps) {
           />
         </div>
         <div className="flex items-end">
-          <Button className="w-full sm:w-auto" onClick={handleApply}>
+          <Button className="w-full sm:w-auto" type="submit">
             Apply
           </Button>
         </div>
       </div>
-    </div>
+    </form>
   );
 }

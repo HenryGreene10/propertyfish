@@ -1,14 +1,28 @@
-import type { Property } from '@/lib/types';
+// fields: year_built, floors, units_total, permits_last_12m
+import type { SearchCard } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 
 type PropertyCardProps = {
-  p: Property;
+  p: SearchCard;
   variant?: 'compact' | 'default';
   className?: string;
 };
 
 function mergeClasses(base: string, extra?: string) {
   return extra ? `${base} ${extra}` : base;
+}
+
+function formatLastPermitDate(input?: string | null) {
+  if (!input) return '—';
+  const parsed = new Date(input);
+  if (Number.isNaN(parsed.getTime())) {
+    return '—';
+  }
+  return parsed.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 const VARIANTS = {
@@ -40,11 +54,12 @@ export default function PropertyCard({
   const subtitle = [boroughLabel, p.bbl ? `BBL ${p.bbl}` : null].filter(Boolean).join(' • ');
 
   const metrics = [
-    { label: 'Year', value: p.year_built },
-    { label: 'Floors', value: p.floors },
-    { label: 'Units', value: p.units },
-    { label: 'Permits (12m)', value: p.permit_count_12m },
+    { label: 'Year ≥', value: p.year_built ?? '—' },
+    { label: 'Floors ≥', value: p.floors ?? '—' },
+    { label: 'Units ≥', value: p.units_total ?? '—' },
+    { label: 'Permits (12m)', value: p.permits_last_12m ?? 0 },
   ];
+  const lastPermit = formatLastPermitDate(p.last_permit_date);
 
   return (
     <Card className={mergeClasses(styles.card, className)}>
@@ -56,12 +71,12 @@ export default function PropertyCard({
         <div className={styles.chipWrap}>
           {metrics.map(({ label, value }) => (
             <span key={label} className={styles.chip}>
-              {label}: {value === null || value === undefined || value === '' ? '—' : value}
+              {label}: {value}
             </span>
           ))}
         </div>
         <div className={styles.meta}>
-          Last permit: {p.last_permit ?? '—'}
+          Last permit: {lastPermit}
         </div>
       </CardContent>
     </Card>

@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Query, HTTPException, Depends
-from pydantic import BaseModel
-from typing import List, Optional
+from datetime import date
+from typing import Optional
+
 import asyncpg
 import os
+from fastapi import APIRouter, Query, HTTPException, Depends
+from pydantic import BaseModel
 
 router = APIRouter()
 _POOL: Optional[asyncpg.Pool] = None
+
 
 async def get_pool():
     global _POOL
@@ -18,21 +21,27 @@ async def get_pool():
         )
     return _POOL
 
-class SearchItem(BaseModel):
+
+class SearchRow(BaseModel):
     bbl: str
-    address: Optional[str]
-    borough: Optional[str]
-    zipcode: Optional[str]
-    latitude: Optional[float]
-    longitude: Optional[float]
-    permits_count: Optional[int]
-    violations_count: Optional[int]
-    permits_last_filed: Optional[str]
-    violations_last_issued: Optional[str]
+    address: str
+    borough: str
+
+    zipcode: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+
+    year_built: Optional[int] = None
+    floors: Optional[int] = None
+    units_total: Optional[int] = None
+
+    permits_last_12m: int = 0
+    last_permit_date: Optional[date] = None
+
 
 class SearchResponse(BaseModel):
     total: int
-    rows: List[SearchItem]
+    rows: list[SearchRow]
 
 @router.get("/api/search", response_model=SearchResponse)
 async def search(
@@ -46,8 +55,12 @@ async def search(
     offset: int = Query(0, ge=0),
     pool=Depends(get_pool),
 ):
-    clauses: List[str] = ["1=1"]
-    where_args: List[object] = []
+    """Search property inventory with optional filters.
+
+    Response rows include year_built, floors, units_total, permits_last_12m, and last_permit_date.
+    """
+    clauses: list[str] = ["1=1"]
+    where_args: list[object] = []
 
     def ph() -> str:
         return f"${len(where_args) + 1}"
@@ -56,23 +69,25 @@ async def search(
     if q:
         p1 = ph(); where_args.append(q)
         p2 = ph(); where_args.append(q)
-        clauses.append(f"(address ILIKE '%' || {p1} || '%' OR address_key % UPPER(unaccent({p2})))")
+        clauses.append(
+            f"(ps.address ILIKE '%' || {p1} || '%' OR ps.address_key % UPPER(unaccent({p2})))",
+        )
 
     if borough:
         p = ph(); where_args.append(borough)
-        clauses.append(f"borough = {p}")
+        clauses.append(f"ps.borough = {p}")
 
     if zipcode:
         p = ph(); where_args.append(zipcode)
-        clauses.append(f"zipcode = {p}")
+        clauses.append(f"ps.zipcode = {p}")
 
     if min_permits > 0:
         p = ph(); where_args.append(min_permits)
-        clauses.append(f"permits_count >= {p}")
+        clauses.append(f"ps.permit_count >= {p}")
 
     if min_violations > 0:
         p = ph(); where_args.append(min_violations)
-        clauses.append(f"violations_count >= {p}")
+        clauses.append(f"ps.violations_count >= {p}")
 
     # bbox: minLng,minLat,maxLng,maxLat
     if bbox:
@@ -84,27 +99,30 @@ async def search(
         p2 = ph(); where_args.append(minLat)
         p3 = ph(); where_args.append(maxLng)
         p4 = ph(); where_args.append(maxLat)
-        clauses.append(f"geom_4326 && ST_MakeEnvelope({p1}, {p2}, {p3}, {p4}, 4326)")
+        clauses.append(f"ps.geom_4326 && ST_MakeEnvelope({p1}, {p2}, {p3}, {p4}, 4326)")
 
-    base = f"FROM mv_property_search WHERE {' AND '.join(clauses)}"
+    base = (
+        "FROM property_search ps "
+        f"WHERE {' AND '.join(clauses)}"
+    )
 
     # total (WHERE args only)
     sql_total = f"SELECT COUNT(*) {base}"
 
     # rows (WHERE args + similarity arg (if q) + limit/offset)
-    order_by = """
-      GREATEST(
-        COALESCE(permits_last_filed, '1900-01-01'::date),
-        COALESCE(violations_last_issued, '1900-01-01'::date)
-      ) DESC
-    """
-    rows_args: List[object] = list(where_args)
+    order_by = (
+        "GREATEST("
+        "COALESCE(ps.last_permit_date, '1900-01-01'::date), "
+        "'1900-01-01'::date"
+        ") DESC"
+    )
+    rows_args: list[object] = list(where_args)
 
     if q:
         # similarity extra arg (not part of where_args)
         rows_args.append(q)
         sim_ph = f"${len(where_args) + 1}"
-        order_by += f", similarity(address_key, UPPER(unaccent({sim_ph}))) DESC"
+        order_by += f", similarity(ps.address_key, UPPER(unaccent({sim_ph}))) DESC"
 
     # limit/offset placeholders are after WHERE (+1 if q)
     rows_args.append(limit)
@@ -113,33 +131,53 @@ async def search(
     off_ph = f"${len(where_args) + (1 if q else 0) + 2}"
 
     sql_rows = f"""
-      SELECT bbl, address, borough, zipcode, latitude, longitude,
-             permits_count, violations_count,
-             TO_CHAR(permits_last_filed, 'YYYY-MM-DD') AS permits_last_filed,
-             TO_CHAR(violations_last_issued, 'YYYY-MM-DD') AS violations_last_issued
+      SELECT
+        (ps.bbl)::text                   AS bbl,
+        ps.address                       AS address,
+        ps.borough                       AS borough,
+
+        NULL::text                       AS zipcode,
+        NULL::float8                     AS latitude,
+        NULL::float8                     AS longitude,
+        NULL::int                        AS year_built,
+        NULL::int                        AS floors,
+        NULL::int                        AS units_total,
+
+        ps.permit_count                  AS permits_last_12m,
+        ps.last_permit_date              AS last_permit_date
       {base}
       ORDER BY {order_by}
       LIMIT {lim_ph} OFFSET {off_ph}
     """
 
-    async with (await get_pool()).acquire() as conn:
+    async with pool.acquire() as conn:
         total = await conn.fetchval(sql_total, *where_args)
         rows = await conn.fetch(sql_rows, *rows_args)
 
     return {"total": total, "rows": [dict(r) for r in rows]}
 
 
-@router.get("/api/properties/{bbl}", response_model=SearchItem)
+@router.get("/api/properties/{bbl}", response_model=SearchRow)
 async def property_detail(bbl: str, pool=Depends(get_pool)):
     q = """
-      SELECT bbl, address, borough, zipcode, latitude, longitude,
-             permits_count, violations_count,
-             TO_CHAR(permits_last_filed, 'YYYY-MM-DD') AS permits_last_filed,
-             TO_CHAR(violations_last_issued, 'YYYY-MM-DD') AS violations_last_issued
-      FROM mv_property_search
-      WHERE bbl = $1
+      SELECT
+        (ps.bbl)::text                   AS bbl,
+        ps.address                       AS address,
+        ps.borough                       AS borough,
+
+        NULL::text                       AS zipcode,
+        NULL::float8                     AS latitude,
+        NULL::float8                     AS longitude,
+        NULL::int                        AS year_built,
+        NULL::int                        AS floors,
+        NULL::int                        AS units_total,
+
+        ps.permit_count                  AS permits_last_12m,
+        ps.last_permit_date              AS last_permit_date
+      FROM property_search ps
+      WHERE ps.bbl = $1::bigint
     """
-    async with (await get_pool()).acquire() as conn:
+    async with pool.acquire() as conn:
         row = await conn.fetchrow(q, bbl)
         if not row:
             raise HTTPException(404, "Not found")

@@ -3,12 +3,11 @@ export type Serializable = string | number | boolean | null | undefined;
 
 export type SearchFilters = {
   borough?: "MN" | "BK" | "QN" | "BX" | "SI";
-  year_built_gte?: number;
-  year_built_lte?: number;
-  floors_eq?: number;
-  units_gte?: number;
   limit?: number;
   offset?: number;
+  year_min?: number;
+  floors_min?: number;
+  units_min?: number;
 };
 
 export type SearchCard = {
@@ -16,7 +15,11 @@ export type SearchCard = {
   address: string;
   borough: "MN" | "BK" | "QN" | "BX" | "SI";
   borough_full?: string | null;
-  permit_count_12m?: number | null;
+  year_built?: number | null;
+  floors?: number | null;
+  units_total?: number | null;
+  permits_last_12m?: number | null;
+  last_permit?: string | null;
   last_permit_date?: string | null;
   // add fields later as backend grows
 };
