@@ -2,4 +2,5 @@
 @tailwind components;
 @tailwind utilities;
 
-/* your custom globals below if any */
+/* place any custom global rules below */
+html, body { min-height: 100%; }
