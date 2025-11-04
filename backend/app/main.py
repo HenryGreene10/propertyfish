@@ -1,21 +1,25 @@
+import logging
 import os
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, Generator, List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import resolve, property as property_router, chat, search as search_router
+from pydantic import BaseModel
+
 from app import routes as api_routes
 from app.db.connection import get_conn as get_conn_cm
-from psycopg2 import errors
 from app.ingestion.normalizers import normalize_pluto as normalize_pluto_row
+from app.routers import chat, property as property_router, resolve, search as search_router
 from app.utils.normalize import normalize_borough
 
 app = FastAPI(title="PropertyFish API", version="0.1.0")
 
+CORS_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")],
+    allow_origins=[origin.strip() for origin in CORS_ORIGINS if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,6 +39,22 @@ BOROUGH_CODE_TO_ABBR = {
     "4": ("QN", "Queens"),
     "5": ("SI", "Staten Island"),
 }
+
+BOROUGH_ABBRS = {abbr for abbr, _ in BOROUGH_CODE_TO_ABBR.values()}
+
+logger = logging.getLogger(__name__)
+logger.debug(
+    "Search SELECT columns: address, bbl, borough, borough_full, permit_count, last_permit_date",
+)
+
+
+class SearchResult(BaseModel):
+    bbl: Optional[str] = None
+    address: Optional[str] = None
+    borough: Optional[str] = None
+    borough_full: Optional[str] = None
+    permit_count_12m: Optional[int] = None
+    last_permit_date: Optional[str] = None
 
 
 def normalize_bbl(value: str | int) -> int:
@@ -220,58 +240,93 @@ async def get_property(bbl: str, limit: int = 5):
 
 @app.get("/search")
 def search(
-    q: str = Query(..., min_length=1, description="Free-text search query"),
+    q: Optional[str] = None,
+    borough: Optional[str] = Query(None),
+    year_built_gte: Optional[int] = Query(None),
+    year_built_lte: Optional[int] = Query(None),
+    num_floors_gte: Optional[int] = Query(None),
+    num_floors_lte: Optional[int] = Query(None),
+    units_gte: Optional[int] = Query(None),
+    units_lte: Optional[int] = Query(None),
+    has_permits_12m: Optional[bool] = Query(None),
+    has_complaints_12m: Optional[bool] = Query(None),
+    last_sale_date_gte: Optional[str] = Query(None),
+    last_sale_date_lte: Optional[str] = Query(None),
+    limit: int = Query(10, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     conn=Depends(get_conn),
 ):
-    q = q.strip()
-    if len(q) < 2:
-        return []
+    borough_token: Optional[str] = None
+    if borough:
+        candidate = borough.strip()
+        if candidate:
+            upper = candidate.upper()
+            if upper not in {"ANY", "ALL"}:
+                code, _ = normalize_borough(upper)
+                if code and code in BOROUGH_CODE_TO_ABBR:
+                    borough_token = BOROUGH_CODE_TO_ABBR[code][0]
+                elif upper in BOROUGH_ABBRS:
+                    borough_token = upper
 
-    like_term = f"%{q}%"
+    borough_param = borough_token
     with conn.cursor() as cur:
-        try:
-            cur.execute(
-                """
-                SELECT
-                    bbl,
-                    address,
-                    borough
-                FROM pluto
-                WHERE address ILIKE %s
-                ORDER BY similarity(address, %s) DESC NULLS LAST, address ASC
-                LIMIT 10
-                """,
-                (like_term, q),
-            )
-            rows = cur.fetchall()
-        except errors.UndefinedFunction:
-            conn.rollback()
-            cur.execute(
-                """
-                SELECT
-                    bbl,
-                    address,
-                    borough
-                FROM pluto
-                WHERE address ILIKE %s
-                ORDER BY address ASC
-                LIMIT 10
-                """,
-                (like_term,),
-            )
-            rows = cur.fetchall()
+        cur.execute(
+            """
+            SELECT COUNT(*)::bigint AS total_count
+            FROM public.property_search
+            WHERE (%s::text IS NULL OR UPPER(borough) = %s)
+            """,
+            (borough_param, borough_param),
+        )
+        count_row = cur.fetchone() or {}
+        total = int(count_row.get("total_count") or 0)
+
+        # TODO: Reintroduce year/units filters once property_search exposes them safely.
+        cur.execute(
+            """
+            SELECT
+                address,
+                bbl,
+                borough,
+                borough_full,
+                permit_count,
+                last_permit_date
+            FROM public.property_search
+            WHERE (%s::text IS NULL OR UPPER(borough) = %s)
+            ORDER BY permit_count DESC, bbl ASC
+            LIMIT %s OFFSET %s
+            """,
+            (borough_param, borough_param, limit, offset),
+        )
+        rows = cur.fetchall()
 
     results: List[Dict[str, Any]] = []
     for row in rows:
-        row_bbl = int(Decimal(str(row["bbl"]))) if row.get("bbl") is not None else None
-        record = {
-            "bbl": row_bbl,
-            "address": row["address"],
-            "borough": row["borough"],
-        }
-        results.append(record)
+        row_bbl = row.get("bbl")
+        normalized_bbl: Optional[str] = None
+        if row_bbl is not None:
+            try:
+                normalized_bbl = str(normalize_bbl(row_bbl))
+            except (InvalidOperation, ValueError):
+                normalized_bbl = str(row_bbl)
 
-    return results
+        permit_count = row.get("permit_count")
+        if isinstance(permit_count, Decimal):
+            permit_count_value = int(permit_count)
+        else:
+            permit_count_value = permit_count
+
+        record = SearchResult(
+            bbl=normalized_bbl,
+            address=row["address"],
+            borough=row["borough"],
+            borough_full=row.get("borough_full"),
+            permit_count_12m=permit_count_value if permit_count_value is not None else None,
+            last_permit_date=_to_iso(row.get("last_permit_date")),
+        )
+        results.append(record.model_dump(exclude_none=True))
+
+    return {"results": results, "total": total}
 
 
 @app.get("/parcels/{bbl}")
