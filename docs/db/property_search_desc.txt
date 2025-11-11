@@ -1,0 +1,54 @@
+                                    Materialized view "public.property_search"
+      Column      |  Type  | Collation | Nullable | Default | Storage  | Compression | Stats target | Description 
+-----------------+--------+-----------+----------+---------+----------+-------------+--------------+-------------
+ address          | text   |           |          |         | extended |             |              | 
+ bbl              | bigint |           |          |         | plain    |             |              | 
+ borough          | text   |           |          |         | extended |             |              | 
+ permit_count_12m | bigint |           |          |         | plain    |             |              | 
+ last_permit_date | date   |           |          |         | plain    |             |              | 
+ year_built       | integer |           |          |         | plain    |             |              | 
+ borough_full     | text   |           |          |         | extended |             |              | 
+Indexes:
+    "ix_property_search_addr_trgm" gin (address gin_trgm_ops)
+View definition:
+ WITH psb AS (
+         SELECT property_search_base.address,
+            NULLIF(regexp_replace(property_search_base.bbl::text, '\..*'::text, ''::text), ''::text)::bigint AS bbl
+           FROM property_search_base
+        ), pa AS (
+         SELECT mv_permit_agg.bbl_norm,
+            mv_permit_agg.permit_count_12m,
+            mv_permit_agg.last_permit_date
+           FROM mv_permit_agg
+        ), p_enriched AS (
+         SELECT psb.address,
+            psb.bbl,
+            SUBSTRING(lpad(psb.bbl::text, 10, '0'::text) FROM 1 FOR 1) AS boro_digit
+           FROM psb
+        )
+ SELECT COALESCE(NULLIF(upper(TRIM(BOTH FROM (COALESCE(p.houseno, ''::text) || ' '::text) || p.street)), ''::text), e.address) AS address,
+    e.bbl,
+        CASE e.boro_digit
+            WHEN '1'::text THEN 'MN'::text
+            WHEN '2'::text THEN 'BX'::text
+            WHEN '3'::text THEN 'BK'::text
+            WHEN '4'::text THEN 'QN'::text
+            WHEN '5'::text THEN 'SI'::text
+            ELSE NULL::text
+        END AS borough,
+    COALESCE(a.permit_count_12m, 0::bigint) AS permit_count_12m,
+    a.last_permit_date,
+    pp.year_built AS year_built,
+        CASE e.boro_digit
+            WHEN '1'::text THEN 'Manhattan'::text
+            WHEN '2'::text THEN 'Bronx'::text
+            WHEN '3'::text THEN 'Brooklyn'::text
+            WHEN '4'::text THEN 'Queens'::text
+            WHEN '5'::text THEN 'Staten Island'::text
+            ELSE NULL::text
+        END AS borough_full
+   FROM p_enriched e
+     LEFT JOIN pluto p ON NULLIF(regexp_replace(p.bbl, '\..*'::text, ''::text), ''::text)::bigint = e.bbl
+     LEFT JOIN properties pp ON pp.bbl = e.bbl
+     LEFT JOIN pa a ON e.bbl = a.bbl_norm;
+Access method: heap

@@ -1,0 +1,6 @@
+public,property_search,address,text
+public,property_search,bbl,bigint
+public,property_search,borough,text
+public,property_search,permit_count,bigint
+public,property_search,last_permit_date,date
+public,property_search,borough_full,text

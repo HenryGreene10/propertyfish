@@ -93,3 +93,15 @@ _reports/
 data/
 
 *.tsbuildinfo
+# caches
+__pycache__/
+*.pyc
+# generated
+/docs/api/openapi.json
+
+# keep specific CSV docs/fixtures in repo (override *.csv on line 86)
+!docs/
+!docs/db/
+!docs/db/property_search_columns.csv
+!fixtures/
+!fixtures/property_search_sample.csv
