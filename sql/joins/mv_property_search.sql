@@ -1,58 +1,30 @@
-DROP MATERIALIZED VIEW IF EXISTS property_search CASCADE;
+-- sql/joins/mv_property_search.sql
+-- Canonical search view joining PLUTO to mv_permit_agg by normalized BIGINT BBL
 
-CREATE MATERIALIZED VIEW property_search AS
-WITH psb AS (
-  SELECT
-    address,
-    -- strip any ".000000000" or other decimal tails, then cast
-    NULLIF(regexp_replace(bbl::text, '\..*', ''), '')::bigint AS bbl
-  FROM public.property_search_base
-),
-pa AS (
-  SELECT
-    bbl_norm::bigint AS bbl_norm,
-    permit_count_12m,
-    last_permit_date
-  FROM public.mv_permit_agg
-),
-p_enriched AS (
-  SELECT
-    psb.address,
-    psb.bbl,
-    SUBSTRING(LPAD(psb.bbl::text, 10, '0') FROM 1 FOR 1) AS boro_digit
-  FROM psb
-)
+DROP VIEW IF EXISTS public.property_search;
+
+CREATE VIEW public.property_search AS
 SELECT
+  -- Return digits-only BBL (left-padded to 10) for API
+  lpad(regexp_replace(pl.bbl, '\D', '', 'g'), 10, '0') AS bbl,
   COALESCE(
-    NULLIF(UPPER(TRIM(COALESCE(p.houseno,'') || ' ' || p.street)),''),
-    e.address
+    NULLIF(pl.address, ''),
+    NULLIF(trim(coalesce(pl.houseno, '') || ' ' || coalesce(pl.street, '')), '')
   ) AS address,
-  e.bbl,
-  CASE e.boro_digit
-    WHEN '1' THEN 'MN'
-    WHEN '2' THEN 'BX'
-    WHEN '3' THEN 'BK'
-    WHEN '4' THEN 'QN'
-    WHEN '5' THEN 'SI'
-    ELSE NULL
-  END AS borough,
-  COALESCE(a.permit_count_12m, 0) AS permit_count,
-  a.last_permit_date,
-  CASE e.boro_digit
-    WHEN '1' THEN 'Manhattan'
-    WHEN '2' THEN 'Bronx'
-    WHEN '3' THEN 'Brooklyn'
-    WHEN '4' THEN 'Queens'
-    WHEN '5' THEN 'Staten Island'
-    ELSE NULL
-  END AS borough_full
-FROM p_enriched e
-LEFT JOIN public.pluto p
-  ON NULLIF(regexp_replace(p.bbl::text, '\..*', ''), '')::bigint = e.bbl
-LEFT JOIN pa a
-  ON e.bbl = a.bbl_norm;
+  pl.borough AS borough,
+  CASE pl.borough
+    WHEN 'MN' THEN 'Manhattan'
+    WHEN 'BX' THEN 'Bronx'
+    WHEN 'BK' THEN 'Brooklyn'
+    WHEN 'QN' THEN 'Queens'
+    WHEN 'SI' THEN 'Staten Island'
+    ELSE ''
+  END AS borough_full,
+  COALESCE(pa.permit_count_12m, 0) AS permit_count_12m,
+  pa.last_permit_date AS last_permit_date
+FROM public.pluto pl
+LEFT JOIN public.mv_permit_agg pa
+  ON lpad(regexp_replace(pl.bbl, '\D', '', 'g'), 10, '0') = lpad(pa.bbl_norm::text, 10, '0');
 
--- Required for CONCURRENT refresh and fast lookups
-CREATE UNIQUE INDEX IF NOT EXISTS ux_property_search_bbl
-  ON public.property_search (bbl);
-CREATE INDEX IF NOT EXISTS ix_property_search_addr_trgm ON property_search USING gin (address gin_trgm_ops);
+-- Verification (run manually if needed):
+-- SELECT COUNT(*) FROM property_search WHERE permit_count_12m > 0 LIMIT 5;
