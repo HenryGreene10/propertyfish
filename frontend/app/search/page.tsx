@@ -17,7 +17,7 @@ type SearchItem = {
   year_built?: number | null;
   floors?: number | null;
   units_total?: number | null;
-  permits_last_12m?: number | null;
+  permit_count_12m?: number | null;
   last_permit_date?: string | null;
 };
 
@@ -28,25 +28,57 @@ type SearchResponse = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 
-type BuildSearchParamsArgs = {
-  yearMin?: number;
-  limit?: number;
-  offset?: number;
-  // floorsMin?: number;
-  // unitsMin?: number;
-};
+const SORT_WHITELIST: ReadonlySet<NonNullable<SearchFilters['sort']>> = new Set([
+  'last_permit_date',
+  'year_built',
+  'permit_count_12m',
+  'relevance',
+]);
+const ORDER_WHITELIST: ReadonlySet<'asc' | 'desc'> = new Set(['asc', 'desc']);
 
-function buildSearchParams({ yearMin, limit, offset }: BuildSearchParamsArgs) {
+function clampLimit(value: number | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
+  return Math.min(Math.max(Math.trunc(value), 1), 50);
+}
+
+function normalizeOffset(value: number | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
+  return Math.max(0, Math.trunc(value));
+}
+
+function asNumber(value: number | undefined) {
+  if (typeof value !== 'number' || Number.isNaN(value)) return undefined;
+  return value;
+}
+
+function buildSearchParams(filters: Partial<SearchFilters> = {}) {
   const params = new URLSearchParams();
 
-  if (typeof limit === 'number') {
-    params.set('limit', String(limit));
+  const text = typeof filters.q === 'string' ? filters.q.trim() : '';
+  if (text) {
+    params.set('q', text);
   }
-  if (typeof offset === 'number') {
-    params.set('offset', String(offset));
+  if (filters.borough) {
+    params.set('borough', filters.borough);
   }
-  if (typeof yearMin === 'number') {
-    params.set('year_min', String(yearMin));
+
+  const numericEntries: Array<[keyof SearchFilters, number | undefined]> = [
+    ['limit', clampLimit(filters.limit)],
+    ['offset', normalizeOffset(filters.offset)],
+    ['year_min', asNumber(filters.year_min)],
+    ['permits_min_12m', asNumber(filters.permits_min_12m)],
+  ];
+  numericEntries.forEach(([key, value]) => {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      params.set(key, String(value));
+    }
+  });
+
+  if (filters.sort && SORT_WHITELIST.has(filters.sort)) {
+    params.set('sort', filters.sort);
+  }
+  if (filters.order && ORDER_WHITELIST.has(filters.order)) {
+    params.set('order', filters.order);
   }
 
   return params;
@@ -81,7 +113,7 @@ function mapToCard(item: SearchItem): SearchCard {
     year_built: item.year_built,
     floors: item.floors,
     units_total: item.units_total,
-    permits_last_12m: item.permits_last_12m,
+    permit_count_12m: item.permit_count_12m,
     last_permit_date: item.last_permit_date,
   };
 }
@@ -98,15 +130,10 @@ export default function SearchPage() {
     setError(null);
     setResults([]);
 
-    const params = buildSearchParams({
-      yearMin: nextFilters.year_min,
-      limit: nextFilters.limit,
-      offset: nextFilters.offset,
-      // floorsMin: nextFilters.floors_min,
-      // unitsMin: nextFilters.units_min,
-    });
+    const params = buildSearchParams(nextFilters);
     const qs = params.toString();
     const url = `${API_BASE}/api/search${qs ? `?${qs}` : ''}`;
+    console.debug('PF-FE-SEARCH', url);
 
     try {
       const res = await fetch(url, { cache: 'no-store' });
