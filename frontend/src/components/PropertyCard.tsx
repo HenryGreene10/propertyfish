@@ -1,4 +1,4 @@
-// fields: year_built, floors, units_total, permits_last_12m
+// fields: year_built, floors, units_total, permit_count_12m
 import type { SearchCard } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/Card';
 
@@ -57,7 +57,7 @@ export default function PropertyCard({
     { label: 'Year ≥', value: p.year_built ?? '—' },
     { label: 'Floors ≥', value: p.floors ?? '—' },
     { label: 'Units ≥', value: p.units_total ?? '—' },
-    { label: 'Permits (12m)', value: p.permits_last_12m ?? 0 },
+    { label: 'Permits (12m)', value: p.permit_count_12m ?? 0 },
   ];
   const lastPermit = formatLastPermitDate(p.last_permit_date);
 

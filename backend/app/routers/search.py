@@ -1,13 +1,45 @@
 from datetime import date
 from typing import Optional
+import logging
+import os
+import re
 
 import asyncpg
-import os
 from fastapi import APIRouter, Query, HTTPException, Depends
 from pydantic import BaseModel
 
+from settings.config import settings
+
 router = APIRouter()
 _POOL: Optional[asyncpg.Pool] = None
+
+logger = logging.getLogger(__name__)
+
+BOROUGH_ABBREVS = {"MN", "BX", "BK", "QN", "SI"}
+BOROUGH_NAME_MAP = {
+    "MANHATTAN": "MN",
+    "NY": "MN",
+    "NEW YORK": "MN",
+    "BRONX": "BX",
+    "BROOKLYN": "BK",
+    "KINGS": "BK",
+    "QUEENS": "QN",
+    "STATEN ISLAND": "SI",
+}
+
+_TABLE_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_\.]+$")
+
+
+def _coerce_table_name(value: Optional[str]) -> str:
+    candidate = (value or "property_search").strip()
+    if not candidate or not _TABLE_NAME_PATTERN.fullmatch(candidate):
+        raise RuntimeError(
+            "Invalid TABLE_SEARCH value; only letters, numbers, underscores, and dots are allowed.",
+        )
+    return candidate
+
+
+TABLE_SEARCH = _coerce_table_name(settings.TABLE_SEARCH)
 
 
 async def get_pool():
@@ -26,6 +58,7 @@ class SearchRow(BaseModel):
     bbl: str
     address: str
     borough: str
+    borough_full: Optional[str] = None
 
     zipcode: Optional[str] = None
     latitude: Optional[float] = None
@@ -35,7 +68,7 @@ class SearchRow(BaseModel):
     floors: Optional[int] = None
     units_total: Optional[int] = None
 
-    permits_last_12m: int = 0
+    permit_count_12m: int = 0
     last_permit_date: Optional[date] = None
 
 
@@ -43,116 +76,185 @@ class SearchResponse(BaseModel):
     total: int
     rows: list[SearchRow]
 
+
 @router.get("/api/search", response_model=SearchResponse)
 async def search(
-    q: Optional[str] = Query(None, description="free text address"),
-    borough: Optional[str] = Query(None, regex="^(MN|BX|BK|QN|SI)$"),
-    zipcode: Optional[str] = Query(None, min_length=5, max_length=5),
-    bbox: Optional[str] = Query(None, description="minLng,minLat,maxLng,maxLat"),
-    min_permits: int = 0,
-    min_violations: int = 0,
+    q: Optional[str] = Query(None, description="Free-text address or BBL"),
+    borough: Optional[str] = Query(None, description="Two-letter code or borough name"),
+    floors_min: Optional[int] = Query(None, ge=0),
+    units_min: Optional[int] = Query(None, ge=0),
+    year_min: Optional[int] = Query(None, ge=0),
+    permits_min_12m: Optional[int] = Query(None, ge=0),
+    sort: Optional[str] = Query(
+        None,
+        description="Sort field: last_permit_date|year_built|permit_count_12m|relevance",
+    ),
+    order: Optional[str] = Query(None, description="asc|desc"),
     limit: int = Query(20, ge=1, le=200),
     offset: int = Query(0, ge=0),
     pool=Depends(get_pool),
 ):
     """Search property inventory with optional filters.
 
-    Response rows include year_built, floors, units_total, permits_last_12m, and last_permit_date.
+    Response rows expose the limited property_search view fields (address, borough labels, permit_count_12m, last_permit_date); other attributes remain placeholders.
     """
-    clauses: list[str] = ["1=1"]
+    limit = max(1, min(limit, 50))
+    offset = max(0, offset)
+
+    select_columns = [
+        "(ps.bbl)::text AS bbl",
+        "ps.address AS address",
+        "ps.borough AS borough",
+        "ps.borough_full AS borough_full",
+        "NULL::text AS zipcode",
+        "NULL::float8 AS latitude",
+        "NULL::float8 AS longitude",
+        "NULL::int AS year_built",
+        "NULL::int AS floors",
+        "NULL::int AS units_total",
+        "ps.permit_count_12m AS permit_count_12m",
+        "ps.last_permit_date AS last_permit_date",
+    ]
+
+    where_clauses: list[str] = ["1=1"]
     where_args: list[object] = []
+    active_filters: list[str] = []
 
-    def ph() -> str:
-        return f"${len(where_args) + 1}"
+    def add_param(value: object) -> str:
+        where_args.append(value)
+        return f"${len(where_args)}"
 
-    # q used twice in WHERE
-    if q:
-        p1 = ph(); where_args.append(q)
-        p2 = ph(); where_args.append(q)
-        clauses.append(
-            f"(ps.address ILIKE '%' || {p1} || '%' OR ps.address_key % UPPER(unaccent({p2})))",
-        )
+    normalized_q = q.strip() if isinstance(q, str) else None
+    if normalized_q:
+        like_value = f"%{normalized_q}%"
+        clause_parts = [
+            "ps.address ILIKE " + add_param(like_value),
+            "(ps.bbl)::text ILIKE " + add_param(like_value),
+            "ps.borough_full ILIKE " + add_param(like_value),
+        ]
+        where_clauses.append("(" + " OR ".join(clause_parts) + ")")
+        active_filters.append("q")
+    elif normalized_q is not None and not normalized_q:
+        normalized_q = None
 
+    borough_filter = None
     if borough:
-        p = ph(); where_args.append(borough)
-        clauses.append(f"ps.borough = {p}")
+        token = borough.strip().upper()
+        if token in BOROUGH_ABBREVS:
+            borough_filter = token
+        else:
+            borough_filter = BOROUGH_NAME_MAP.get(token.replace(".", ""))
+        if not borough_filter:
+            raise HTTPException(400, "Invalid borough; use MN,BX,BK,QN,SI or full names")
+    if borough_filter:
+        where_clauses.append(f"ps.borough = {add_param(borough_filter)}")
+        active_filters.append("borough")
 
-    if zipcode:
-        p = ph(); where_args.append(zipcode)
-        clauses.append(f"ps.zipcode = {p}")
+    if floors_min is not None:
+        logger.debug("PF-BE-SEARCH ignoring floors_min until column is available")
+    if units_min is not None:
+        logger.debug("PF-BE-SEARCH ignoring units_min until column is available")
 
-    if min_permits > 0:
-        p = ph(); where_args.append(min_permits)
-        clauses.append(f"ps.permit_count >= {p}")
+    if year_min is not None:
+        logger.debug("PF-BE-SEARCH skipping year_min; restricted column set")
 
-    if min_violations > 0:
-        p = ph(); where_args.append(min_violations)
-        clauses.append(f"ps.violations_count >= {p}")
+    if permits_min_12m is not None:
+        where_clauses.append(f"ps.permit_count_12m >= {add_param(permits_min_12m)}")
+        active_filters.append("permits_min_12m")
 
-    # bbox: minLng,minLat,maxLng,maxLat
-    if bbox:
-        try:
-            minLng, minLat, maxLng, maxLat = [float(x) for x in bbox.split(",")]
-        except Exception:
-            raise HTTPException(400, "Invalid bbox; expected minLng,minLat,maxLng,maxLat")
-        p1 = ph(); where_args.append(minLng)
-        p2 = ph(); where_args.append(minLat)
-        p3 = ph(); where_args.append(maxLng)
-        p4 = ph(); where_args.append(maxLat)
-        clauses.append(f"ps.geom_4326 && ST_MakeEnvelope({p1}, {p2}, {p3}, {p4}, 4326)")
+    base = f"FROM {TABLE_SEARCH} ps WHERE " + " AND ".join(where_clauses)
 
-    base = (
-        "FROM property_search ps "
-        f"WHERE {' AND '.join(clauses)}"
-    )
-
-    # total (WHERE args only)
     sql_total = f"SELECT COUNT(*) {base}"
 
-    # rows (WHERE args + similarity arg (if q) + limit/offset)
-    order_by = (
-        "GREATEST("
-        "COALESCE(ps.last_permit_date, '1900-01-01'::date), "
-        "'1900-01-01'::date"
-        ") DESC"
-    )
+    normalized_sort = (sort or "").strip().lower() or None
+    normalized_order = (order or "").strip().lower() or None
+
+    valid_sorts = {"last_permit_date", "permit_count_12m", "relevance"}
+    if normalized_sort and normalized_sort not in valid_sorts:
+        raise HTTPException(400, f"Invalid sort '{normalized_sort}'")
+
+    if normalized_order not in {"asc", "desc"}:
+        normalized_order = "desc"
+
+    def nulls_clause(direction: str) -> str:
+        return "NULLS LAST" if direction == "desc" else "NULLS FIRST"
+
+    order_by_parts: list[str] = []
     rows_args: list[object] = list(where_args)
 
-    if q:
-        # similarity extra arg (not part of where_args)
-        rows_args.append(q)
-        sim_ph = f"${len(where_args) + 1}"
-        order_by += f", similarity(ps.address_key, UPPER(unaccent({sim_ph}))) DESC"
+    similarity_placeholder = None
+    use_similarity = bool(normalized_q and normalized_sort in (None, "relevance"))
+    if use_similarity:
+        similarity_placeholder = f"${len(rows_args) + 1}"
+        rows_args.append(normalized_q)
 
-    # limit/offset placeholders are after WHERE (+1 if q)
+    if use_similarity and similarity_placeholder:
+        order_by_parts.append(
+            f"similarity(ps.address, UPPER(unaccent({similarity_placeholder}))) DESC NULLS LAST",
+        )
+        if normalized_sort == "relevance":
+            active_filters.append("sort=relevance")
+        normalized_sort = "last_permit_date"
+
+    if normalized_sort == "relevance" and not normalized_q:
+        normalized_sort = None
+
+    def append_sort(column: str, direction: str):
+        order_by_parts.append(
+            f"ps.{column} {'DESC' if direction == 'desc' else 'ASC'} {nulls_clause(direction)}",
+        )
+
+    if normalized_sort == "last_permit_date":
+        append_sort("last_permit_date", normalized_order)
+    elif normalized_sort == "permit_count_12m":
+        append_sort("permit_count_12m", normalized_order)
+
+    append_sort("last_permit_date", "desc")
+    order_by_parts.append("ps.bbl ASC")
+    order_by = ", ".join(order_by_parts)
+
+    lim_ph = f"${len(rows_args) + 1}"
     rows_args.append(limit)
+    off_ph = f"${len(rows_args) + 1}"
     rows_args.append(offset)
-    lim_ph = f"${len(where_args) + (1 if q else 0) + 1}"
-    off_ph = f"${len(where_args) + (1 if q else 0) + 2}"
 
     sql_rows = f"""
       SELECT
-        (ps.bbl)::text                   AS bbl,
-        ps.address                       AS address,
-        ps.borough                       AS borough,
-
-        NULL::text                       AS zipcode,
-        NULL::float8                     AS latitude,
-        NULL::float8                     AS longitude,
-        NULL::int                        AS year_built,
-        NULL::int                        AS floors,
-        NULL::int                        AS units_total,
-
-        ps.permit_count                  AS permits_last_12m,
-        ps.last_permit_date              AS last_permit_date
+        {', '.join(select_columns)}
       {base}
       ORDER BY {order_by}
       LIMIT {lim_ph} OFFSET {off_ph}
     """
 
-    async with pool.acquire() as conn:
-        total = await conn.fetchval(sql_total, *where_args)
-        rows = await conn.fetch(sql_rows, *rows_args)
+    validated_params = {
+        "q": q if normalized_q else None,
+        "borough": borough_filter,
+        "year_min": year_min,
+        "permits_min_12m": permits_min_12m,
+        "sort": sort,
+        "order": normalized_order,
+        "limit": limit,
+        "offset": offset,
+    }
+    logger.info(
+        "PF-BE-SEARCH params: %s order: %s where: %s",
+        {k: v for k, v in validated_params.items() if v not in (None, "")},
+        order_by,
+        ", ".join(active_filters) or "none",
+    )
+    logger.debug("PF-BE-SEARCH sql_total: %s params=%s", sql_total.strip(), list(where_args))
+    logger.debug("PF-BE-SEARCH sql_rows: %s params=%s", sql_rows.strip(), list(rows_args))
+
+    try:
+        async with pool.acquire() as conn:
+            total = await conn.fetchval(sql_total, *where_args)
+            rows = await conn.fetch(sql_rows, *rows_args)
+    except (asyncpg.exceptions.UndefinedTableError, asyncpg.exceptions.UndefinedColumnError) as exc:
+        logger.exception("PF-BE-SEARCH relation/columns missing for table %s", TABLE_SEARCH)
+        raise HTTPException(
+            status_code=500,
+            detail="Search backing relation/columns not found. Create the 'property_search' view or set TABLE_SEARCH.",
+        ) from exc
 
     return {"total": total, "rows": [dict(r) for r in rows]}
 
@@ -168,11 +270,11 @@ async def property_detail(bbl: str, pool=Depends(get_pool)):
         NULL::text                       AS zipcode,
         NULL::float8                     AS latitude,
         NULL::float8                     AS longitude,
-        NULL::int                        AS year_built,
+        ps.year_built                    AS year_built,
         NULL::int                        AS floors,
         NULL::int                        AS units_total,
 
-        ps.permit_count                  AS permits_last_12m,
+        ps.permit_count_12m              AS permit_count_12m,
         ps.last_permit_date              AS last_permit_date
       FROM property_search ps
       WHERE ps.bbl = $1::bigint

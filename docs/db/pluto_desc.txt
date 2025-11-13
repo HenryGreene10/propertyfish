@@ -1,0 +1,28 @@
+                                                                  Table "public.pluto"
+   Column   |           Type           | Collation | Nullable |              Default              | Storage  | Compression | Stats target | Description 
+------------+--------------------------+-----------+----------+-----------------------------------+----------+-------------+--------------+-------------
+ id         | bigint                   |           | not null | nextval('pluto_id_seq'::regclass) | plain    |             |              | 
+ bbl        | text                     |           | not null |                                   | extended |             |              | 
+ address    | text                     |           |          |                                   | extended |             |              | 
+ zipcode    | text                     |           |          |                                   | extended |             |              | 
+ borough    | text                     |           |          |                                   | extended |             |              | 
+ houseno    | text                     |           |          |                                   | extended |             |              | 
+ street     | text                     |           |          |                                   | extended |             |              | 
+ latitude   | double precision         |           |          |                                   | plain    |             |              | 
+ longitude  | double precision         |           |          |                                   | plain    |             |              | 
+ raw        | jsonb                    |           |          |                                   | extended |             |              | 
+ updated_at | timestamp with time zone |           | not null | now()                             | plain    |             |              | 
+Indexes:
+    "pluto_pkey" PRIMARY KEY, btree (id)
+    "idx_pluto_addr_key" btree (upper(regexp_replace((COALESCE(houseno, ''::text) || ' '::text) || COALESCE(street, ''::text), '\s+'::text, ' '::text, 'g'::text)))
+    "idx_pluto_address" btree (street, houseno)
+    "idx_pluto_address_upper" btree (upper(address))
+    "idx_pluto_bbl" btree (bbl)
+    "idx_pluto_bbl_norm" btree (bbl_normalize(bbl))
+    "idx_pluto_boro_code" btree (borough_to_code(borough))
+    "idx_pluto_geom_wgs84" gist (st_transform(st_setsrid(st_makepoint(longitude, latitude), 4326), 2263))
+    "idx_pluto_latlon" btree (latitude, longitude)
+    "idx_pluto_street_upper" btree (upper(street))
+    "idx_pluto_zip" btree (zipcode)
+Access method: heap
+

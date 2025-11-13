@@ -1,0 +1,41 @@
+                                                                                                  Table "public.dob_permits"
+       Column       |           Type           | Collation | Nullable |                                             Default                                             | Storage  | Compression | Stats target | Description 
+--------------------+--------------------------+-----------+----------+-------------------------------------------------------------------------------------------------+----------+-------------+--------------+-------------
+ id                 | integer                  |           | not null | nextval('dob_permits_id_seq'::regclass)                                                         | plain    |             |              | 
+ bbl                | text                     |           |          |                                                                                                 | extended |             |              | 
+ job_number         | text                     |           |          |                                                                                                 | extended |             |              | 
+ status             | text                     |           |          |                                                                                                 | extended |             |              | 
+ filed_date         | date                     |           |          |                                                                                                 | plain    |             |              | 
+ status_date        | date                     |           |          |                                                                                                 | plain    |             |              | 
+ source_url         | text                     |           |          |                                                                                                 | extended |             |              | 
+ filing_date        | date                     |           |          |                                                                                                 | plain    |             |              | 
+ latest_status_date | date                     |           |          |                                                                                                 | plain    |             |              | 
+ estimated_cost     | numeric                  |           |          |                                                                                                 | main     |             |              | 
+ raw                | jsonb                    |           |          |                                                                                                 | extended |             |              | 
+ updated_at         | timestamp with time zone |           | not null | now()                                                                                           | plain    |             |              | 
+ borough            | text                     |           |          |                                                                                                 | extended |             |              | 
+ houseno            | text                     |           |          |                                                                                                 | extended |             |              | 
+ street             | text                     |           |          |                                                                                                 | extended |             |              | 
+ latitude           | double precision         |           |          |                                                                                                 | plain    |             |              | 
+ longitude          | double precision         |           |          |                                                                                                 | plain    |             |              | 
+ issuance_date      | date                     |           |          | generated always as (COALESCE(filing_date, filed_date, status_date, latest_status_date)) stored | plain    |             |              | 
+ job_type           | text                     |           |          |                                                                                                 | extended |             |              | 
+ description        | text                     |           |          |                                                                                                 | extended |             |              | 
+ last_update        | text                     |           |          |                                                                                                 | extended |             |              | 
+ source_row_id      | text                     |           |          |                                                                                                 | extended |             |              | 
+Indexes:
+    "dob_permits_pkey" PRIMARY KEY, btree (id)
+    "idx_dob_permits_bbl" btree (bbl)
+    "idx_dob_permits_filing" btree (filing_date)
+    "idx_dp_addr" btree (upper(regexp_replace((COALESCE(houseno, ''::text) || ' '::text) || COALESCE(street, ''::text), '\s+'::text, ' '::text, 'g'::text)))
+    "idx_dp_bbl" btree (bbl)
+    "idx_dp_bbl_norm" btree (bbl_normalize(bbl))
+    "idx_dp_boro_block_lot" btree (upper(borough), (NULLIF(raw ->> 'block'::text, ''::text)::integer), (NULLIF(raw ->> 'lot'::text, ''::text)::integer))
+    "idx_dp_filed_date" btree (filed_date)
+    "idx_dp_issuance_date" btree (issuance_date)
+    "idx_dp_job_number" btree (job_number)
+    "idx_dp_status_date" btree (status_date)
+    "uq_dob_permits_job_number" UNIQUE CONSTRAINT, btree (job_number)
+    "ux_dob_permits_job_number" UNIQUE, btree (job_number) WHERE job_number IS NOT NULL
+Access method: heap
+
