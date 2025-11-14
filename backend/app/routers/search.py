@@ -64,9 +64,14 @@ class SearchRow(BaseModel):
     latitude: Optional[float] = None
     longitude: Optional[float] = None
 
-    year_built: Optional[int] = None
-    floors: Optional[int] = None
-    units_total: Optional[int] = None
+    yearbuilt: Optional[int] = None
+    numfloors: Optional[float] = None
+    unitsres: Optional[int] = None
+    unitstotal: Optional[int] = None
+    zonedist1: Optional[str] = None
+    landuse: Optional[str] = None
+    bldgarea: Optional[int] = None
+    lotarea: Optional[int] = None
 
     permit_count_12m: int = 0
     last_permit_date: Optional[date] = None
@@ -109,9 +114,14 @@ async def search(
         "NULL::text AS zipcode",
         "NULL::float8 AS latitude",
         "NULL::float8 AS longitude",
-        "NULL::int AS year_built",
-        "NULL::int AS floors",
-        "NULL::int AS units_total",
+        "ps.yearbuilt AS yearbuilt",
+        "ps.numfloors::float8 AS numfloors",
+        "ps.unitsres AS unitsres",
+        "ps.unitstotal AS unitstotal",
+        "ps.zonedist1 AS zonedist1",
+        "ps.landuse AS landuse",
+        "ps.bldgarea AS bldgarea",
+        "ps.lotarea AS lotarea",
         "ps.permit_count_12m AS permit_count_12m",
         "ps.last_permit_date AS last_permit_date",
     ]
@@ -162,6 +172,7 @@ async def search(
         where_clauses.append(f"ps.permit_count_12m >= {add_param(permits_min_12m)}")
         active_filters.append("permits_min_12m")
 
+    # property_search_rich_mv exposes extended PLUTO attributes used here
     base = f"FROM {TABLE_SEARCH} ps WHERE " + " AND ".join(where_clauses)
 
     sql_total = f"SELECT COUNT(*) {base}"
@@ -270,14 +281,19 @@ async def property_detail(bbl: str, pool=Depends(get_pool)):
         NULL::text                       AS zipcode,
         NULL::float8                     AS latitude,
         NULL::float8                     AS longitude,
-        ps.year_built                    AS year_built,
-        NULL::int                        AS floors,
-        NULL::int                        AS units_total,
+        ps.yearbuilt                     AS yearbuilt,
+        ps.numfloors::float8             AS numfloors,
+        ps.unitsres                      AS unitsres,
+        ps.unitstotal                    AS unitstotal,
+        ps.zonedist1                     AS zonedist1,
+        ps.landuse                       AS landuse,
+        ps.bldgarea                      AS bldgarea,
+        ps.lotarea                       AS lotarea,
 
         ps.permit_count_12m              AS permit_count_12m,
         ps.last_permit_date              AS last_permit_date
-      FROM property_search ps
-      WHERE ps.bbl = $1::bigint
+      FROM property_search_rich_mv ps
+      WHERE ps.bbl = $1
     """
     async with pool.acquire() as conn:
         row = await conn.fetchrow(q, bbl)
