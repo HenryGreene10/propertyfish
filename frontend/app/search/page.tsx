@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { FormEvent, useState } from 'react';
 
-import FiltersPanel from '@/components/FiltersPanel';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 import PropertyCard from '@/components/PropertyCard';
-import type { SearchCard, SearchFilters } from '@/lib/types';
+import type { PropertySummary, SearchFilters } from '@/lib/types';
 
 type SearchItem = {
   bbl: string;
@@ -14,11 +15,23 @@ type SearchItem = {
   zipcode?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  yearbuilt?: number | null;
   year_built?: number | null;
+  numfloors?: number | null;
   floors?: number | null;
+  unitsres?: number | null;
+  unitstotal?: number | null;
   units_total?: number | null;
+  zonedist1?: string | null;
+  landuse?: string | null;
+  bldgarea?: number | null;
+  lotarea?: number | null;
+  permit_count_12mo?: number | null;
   permit_count_12m?: number | null;
+  latest_permit_date?: string | null;
   last_permit_date?: string | null;
+  latest_permit_description?: string | null;
+  last_permit?: string | null;
 };
 
 type SearchResponse = {
@@ -66,7 +79,6 @@ function buildSearchParams(filters: Partial<SearchFilters> = {}) {
     ['limit', clampLimit(filters.limit)],
     ['offset', normalizeOffset(filters.offset)],
     ['year_min', asNumber(filters.year_min)],
-    ['permits_min_12m', asNumber(filters.permits_min_12m)],
   ];
   numericEntries.forEach(([key, value]) => {
     if (typeof value === 'number' && Number.isFinite(value)) {
@@ -104,25 +116,64 @@ function toSearchResponse(payload: unknown): SearchResponse {
   return { total, items };
 }
 
-function mapToCard(item: SearchItem): SearchCard {
+function preferNumber(...values: Array<number | null | undefined>) {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function preferString(...values: Array<string | null | undefined>) {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim() !== '') {
+      return value;
+    }
+  }
+  return null;
+}
+
+function mapToCard(item: SearchItem): PropertySummary {
   return {
     bbl: item.bbl,
     address: item.address,
-    borough: item.borough as SearchCard['borough'],
+    borough: item.borough,
     borough_full: item.borough_full,
+    zipcode: item.zipcode,
+    latitude: item.latitude,
+    longitude: item.longitude,
+    yearbuilt: preferNumber(item.yearbuilt, item.year_built),
     year_built: item.year_built,
+    numfloors: preferNumber(item.numfloors, item.floors),
     floors: item.floors,
+    unitsres: item.unitsres,
+    unitstotal: preferNumber(item.unitstotal, item.units_total),
     units_total: item.units_total,
+    zonedist1: item.zonedist1,
+    landuse: item.landuse,
+    bldgarea: item.bldgarea,
+    lotarea: item.lotarea,
+    permit_count_12mo: preferNumber(item.permit_count_12mo, item.permit_count_12m),
     permit_count_12m: item.permit_count_12m,
+    latest_permit_date: preferString(item.latest_permit_date, item.last_permit_date),
     last_permit_date: item.last_permit_date,
+    latest_permit_description: preferString(
+      item.latest_permit_description,
+      item.last_permit,
+    ),
+    last_permit: item.last_permit,
   };
 }
 
 export default function SearchPage() {
-  const [results, setResults] = useState<SearchCard[]>([]);
+  const [results, setResults] = useState<PropertySummary[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [query, setQuery] = useState('');
+  const [boroughFilter, setBoroughFilter] = useState('');
+  const [yearMin, setYearMin] = useState<number | ''>('');
 
   const handleApply = async (nextFilters: Partial<SearchFilters>) => {
     setHasSearched(true);
@@ -151,10 +202,76 @@ export default function SearchPage() {
     }
   };
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleApply({
+      q: query.trim() === '' ? undefined : query.trim(),
+      borough: boroughFilter === '' ? undefined : (boroughFilter as SearchFilters['borough']),
+      limit: 20,
+      offset: 0,
+      year_min: yearMin === '' ? undefined : yearMin,
+    });
+  };
+
   return (
     <div className="max-w-5xl mx-auto p-6">
       <h1 className="mb-4 text-2xl font-bold">Search</h1>
-      <FiltersPanel onApply={handleApply} />
+      <form
+        onSubmit={handleSubmit}
+        className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 shadow-sm"
+      >
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:items-end">
+          <div className="flex flex-col gap-1 lg:col-span-2">
+            <label className="text-xs uppercase tracking-wide text-neutral-500">
+              Search
+            </label>
+            <Input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Address or BBL"
+              className="sm:w-full"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs uppercase tracking-wide text-neutral-500">
+              Borough
+            </label>
+            <select
+              value={boroughFilter}
+              onChange={(e) => setBoroughFilter(e.target.value)}
+              className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Any</option>
+              <option value="MN">Manhattan</option>
+              <option value="BX">Bronx</option>
+              <option value="BK">Brooklyn</option>
+              <option value="QN">Queens</option>
+              <option value="SI">Staten Island</option>
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs uppercase tracking-wide text-neutral-500">
+              Year ≥
+            </label>
+            <Input
+              type="number"
+              inputMode="numeric"
+              value={yearMin}
+              onChange={(e) =>
+                setYearMin(e.target.value === '' ? '' : Number(e.target.value))
+              }
+              placeholder="e.g. 1920"
+              className="sm:w-full"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button className="w-full sm:w-auto" type="submit">
+              Apply
+            </Button>
+          </div>
+        </div>
+      </form>
       {!hasSearched && (
         <div className="py-6 text-center text-sm text-neutral-500">
           Enter filters and click Apply to see results.

@@ -5,14 +5,26 @@ from app.utils.resolve import bbl_for_address
 
 
 def get_summary_by_bbl(bbl: str) -> Optional[Dict[str, Any]]:
-    sql = (
-        """
-        SELECT bbl, address_std AS address, borough, block, lot, bin,
-               land_use, tax_class, lot_area_sqft, bldg_sqft, stories, year_built,
-               last_updated
-        FROM parcels WHERE bbl = %s LIMIT 1;
-        """
-    )
+    sql = """
+        SELECT
+            bbl,
+            address,
+            borough,
+            borough_full,
+            yearbuilt,
+            numfloors,
+            unitsres,
+            unitstotal,
+            zonedist1,
+            landuse,
+            bldgarea,
+            lotarea,
+            permit_count_12m AS permit_count_12mo,
+            last_permit_date  AS latest_permit_date
+        FROM property_search_rich_mv
+        WHERE bbl = %s
+        LIMIT 1;
+    """
     with get_conn() as conn, conn.cursor() as cur:
         cur.execute(sql, (bbl,))
         row = cur.fetchone()

@@ -1,5 +1,5 @@
 import { API } from './config';
-import type { PropertyDetail, SearchCard, SearchFilters } from './types';
+import type { PropertyDetail, PropertySummary, SearchFilters } from './types';
 
 type Serializable = string | number | boolean | null | undefined;
 type QueryObject = Partial<
@@ -27,7 +27,7 @@ export function toQS(obj: QueryObject): string {
 
 export async function getSearch(
   filters: Partial<SearchFilters>,
-): Promise<{ results: SearchCard[]; total: number }> {
+): Promise<{ results: PropertySummary[]; total: number }> {
   const query = toQS(filters);
   const url = `${API}/search${query}`;
   console.debug('[API] getSearch →', url);
@@ -57,7 +57,7 @@ export async function getSearch(
   const resultSource =
     (payload as any).results ?? (payload as any).items ?? [];
   const results = Array.isArray(resultSource)
-    ? (resultSource as SearchCard[])
+    ? (resultSource as PropertySummary[])
     : [];
 
   const totalCandidate =
