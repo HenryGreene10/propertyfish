@@ -32,16 +32,16 @@ const VARIANTS = {
   default: {
     card: '',
     title: 'text-lg',
-    subtitle: 'text-sm text-neutral-400',
-    facts: 'text-sm text-neutral-200',
-    secondary: 'text-xs text-neutral-400',
+    subtitle: 'text-sm',
+    facts: 'text-sm',
+    secondary: 'text-sm',
   },
   compact: {
     card: '!px-3 !py-3',
     title: 'text-base',
-    subtitle: 'text-xs text-neutral-400',
-    facts: 'text-xs text-neutral-200',
-    secondary: 'text-[11px] text-neutral-400',
+    subtitle: 'text-xs',
+    facts: 'text-xs',
+    secondary: 'text-[11px]',
   },
 } satisfies Record<'default' | 'compact', Record<string, string>>;
 
@@ -59,18 +59,25 @@ export default function PropertyCard({
   const landUse = p.landuse || '—';
 
   return (
-    <Link href={`/property/${encodeURIComponent(p.bbl)}`} className="block">
-      <Card className={mergeClasses(styles.card, className)}>
+    <Link href={`/property/${encodeURIComponent(p.bbl)}`} className="block h-full">
+      <Card
+        className={mergeClasses(
+          'border border-charcoal_brown-600 bg-charcoal_brown-400 text-floral_white-500 transition-colors transition-shadow duration-150 hover:border-spicy_paprika-500 hover:bg-charcoal_brown-300 hover:shadow-md cursor-pointer',
+          mergeClasses(styles.card, className),
+        )}
+      >
         <CardHeader className="gap-1">
-          <CardTitle className={styles.title}>{p.address || 'Unknown address'}</CardTitle>
-          <div className={styles.subtitle}>{boroughLabel}</div>
+          <CardTitle className={mergeClasses('font-semibold text-floral_white-500', styles.title)}>
+            {p.address || 'Unknown address'}
+          </CardTitle>
+          <div className={mergeClasses('text-dust_grey-500', styles.subtitle)}>{boroughLabel}</div>
         </CardHeader>
         <CardContent className="gap-1.5">
-          <div className={styles.facts}>
+          <div className={mergeClasses('text-dust_grey-400', styles.facts)}>
             Built {yearBuilt} • {floors} floors • {units} units
           </div>
-          <div className={styles.secondary}>
-            Zoning {zoning} • {landUse}
+          <div className={mergeClasses('text-dust_grey-400', styles.secondary)}>
+            <span className="text-spicy_paprika-500">Zoning</span> {zoning} • {landUse}
           </div>
         </CardContent>
       </Card>

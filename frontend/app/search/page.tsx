@@ -2,8 +2,6 @@
 
 import { FormEvent, useState } from 'react';
 
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
 import PropertyCard from '@/components/PropertyCard';
 import type { PropertySummary, SearchFilters } from '@/lib/types';
 
@@ -176,7 +174,6 @@ export default function SearchPage() {
   const [yearMin, setYearMin] = useState<number | ''>('');
 
   const handleApply = async (nextFilters: Partial<SearchFilters>) => {
-    setHasSearched(true);
     setIsLoading(true);
     setError(null);
     setResults([]);
@@ -193,6 +190,7 @@ export default function SearchPage() {
       }
       const data = toSearchResponse(await res.json());
       setResults(data.items.map(mapToCard));
+      setHasSearched(true);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to fetch search results';
@@ -213,83 +211,95 @@ export default function SearchPage() {
     });
   };
 
+  const fieldClasses =
+    'w-full rounded-lg border border-charcoal_brown-600 bg-carbon_black-300 px-3 py-2 text-sm text-floral_white placeholder:text-dust_grey-500 focus:border-spicy_paprika-500 focus:ring-2 focus:ring-spicy_paprika-500 focus:outline-none transition';
+
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h1 className="mb-4 text-2xl font-bold">Search</h1>
-      <form
-        onSubmit={handleSubmit}
-        className="mb-6 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4 shadow-sm"
-      >
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:items-end">
-          <div className="flex flex-col gap-1 lg:col-span-2">
-            <label className="text-xs uppercase tracking-wide text-neutral-500">
-              Search
-            </label>
-            <Input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Address or BBL"
-              className="sm:w-full"
-            />
+    <div className="min-h-screen bg-carbon_black text-floral_white-500">
+      <div className="mx-auto max-w-5xl p-6">
+        <h1 className="mb-4 text-2xl font-bold text-floral_white-500">Search</h1>
+        <form
+          onSubmit={handleSubmit}
+          className="mb-6 rounded-xl border border-charcoal_brown-600 bg-charcoal_brown-400 p-4 shadow-sm"
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:items-end">
+            <div className="flex flex-col gap-2 lg:col-span-2">
+              <label className="text-xs uppercase tracking-wide text-dust_grey-500">
+                Search
+              </label>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Address or BBL"
+                className={fieldClasses}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs uppercase tracking-wide text-dust_grey-500">
+                Borough
+              </label>
+              <select
+                value={boroughFilter}
+                onChange={(e) => setBoroughFilter(e.target.value)}
+                className={fieldClasses}
+              >
+                <option value="">Any</option>
+                <option value="MN">Manhattan</option>
+                <option value="BX">Bronx</option>
+                <option value="BK">Brooklyn</option>
+                <option value="QN">Queens</option>
+                <option value="SI">Staten Island</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-xs uppercase tracking-wide text-dust_grey-500">
+                Year ≥
+              </label>
+              <input
+                type="number"
+                inputMode="numeric"
+                value={yearMin}
+                onChange={(e) =>
+                  setYearMin(e.target.value === '' ? '' : Number(e.target.value))
+                }
+                placeholder="e.g. 1920"
+                className={fieldClasses}
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-lg px-6 py-2 font-medium text-floral_white-500 shadow-sm transition-colors duration-150 sm:w-auto bg-spicy_paprika-500 hover:bg-spicy_paprika-400 disabled:cursor-not-allowed disabled:bg-spicy_paprika-300"
+              >
+                {isLoading ? 'Searching…' : 'Apply'}
+              </button>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs uppercase tracking-wide text-neutral-500">
-              Borough
-            </label>
-            <select
-              value={boroughFilter}
-              onChange={(e) => setBoroughFilter(e.target.value)}
-              className="rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              <option value="">Any</option>
-              <option value="MN">Manhattan</option>
-              <option value="BX">Bronx</option>
-              <option value="BK">Brooklyn</option>
-              <option value="QN">Queens</option>
-              <option value="SI">Staten Island</option>
-            </select>
+        </form>
+        {!hasSearched && !isLoading && (
+          <div className="py-6 text-center text-sm text-dust_grey-500">
+            Enter filters and click Apply to see results.
           </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-xs uppercase tracking-wide text-neutral-500">
-              Year ≥
-            </label>
-            <Input
-              type="number"
-              inputMode="numeric"
-              value={yearMin}
-              onChange={(e) =>
-                setYearMin(e.target.value === '' ? '' : Number(e.target.value))
-              }
-              placeholder="e.g. 1920"
-              className="sm:w-full"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button className="w-full sm:w-auto" type="submit">
-              Apply
-            </Button>
-          </div>
+        )}
+        {isLoading && (
+          <div className="text-sm text-dust_grey-400">Loading…</div>
+        )}
+        {error && !isLoading && (
+          <div className="text-sm text-spicy_paprika-500">Error: {error}</div>
+        )}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {results.map((item) => (
+            <PropertyCard key={item.bbl} p={item} />
+          ))}
         </div>
-      </form>
-      {!hasSearched && (
-        <div className="py-6 text-center text-sm text-neutral-500">
-          Enter filters and click Apply to see results.
-        </div>
-      )}
-      {hasSearched && isLoading && (
-        <div className="text-sm text-neutral-400">Loading…</div>
-      )}
-      {hasSearched && error && !isLoading && (
-        <div className="text-sm text-red-500">Error: {error}</div>
-      )}
-      {hasSearched && !isLoading && !error && results.length === 0 && (
-        <div className="text-sm text-neutral-400">No results.</div>
-      )}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {results.map((item) => (
-          <PropertyCard key={item.bbl} p={item} />
-        ))}
+        {!isLoading && hasSearched && !error && results.length === 0 && (
+          <p className="mt-8 text-sm text-dust_grey-500">
+            No properties found. Try broadening your search (for example, just "82nd street" or
+            removing the year filter).
+          </p>
+        )}
       </div>
     </div>
   );

@@ -126,7 +126,12 @@ async def search(
         "ps.last_permit_date AS last_permit_date",
     ]
 
-    where_clauses: list[str] = ["1=1"]
+    where_clauses: list[str] = [
+        "1=1",
+        "ps.address IS NOT NULL",
+        "ps.address <> ''",
+        "ps.address ~ '^[0-9]'",
+    ]
     where_args: list[object] = []
     active_filters: list[str] = []
 

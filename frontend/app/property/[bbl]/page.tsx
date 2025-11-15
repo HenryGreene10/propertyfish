@@ -104,143 +104,148 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
   }, [data]);
 
   return (
-    <div className="max-w-5xl mx-auto p-6 space-y-6">
-      <Link href="/search" className="inline-flex items-center text-sm text-blue-400 hover:text-blue-300">
-        ← Back to search
-      </Link>
-      {isLoading && <div className="text-sm text-neutral-400">Loading property…</div>}
-      {!isLoading && error && (
-        <div className="text-sm text-red-500">Error: {error}</div>
-      )}
-      {!isLoading && !error && !data && (
-        <div className="text-sm text-neutral-400">Property not found.</div>
-      )}
+    <div className="min-h-screen bg-carbon_black text-floral_white-500">
+      <div className="mx-auto max-w-5xl space-y-6 p-6">
+        <Link
+          href="/search"
+          className="inline-flex items-center text-sm text-spicy_paprika-500 hover:text-spicy_paprika-400"
+        >
+          ← Back to search
+        </Link>
+        {isLoading && <div className="text-sm text-dust_grey-400">Loading property…</div>}
+        {!isLoading && error && (
+          <div className="text-sm text-spicy_paprika-500">Error: {error}</div>
+        )}
+        {!isLoading && !error && !data && (
+          <div className="text-sm text-dust_grey-400">Property not found.</div>
+        )}
 
-      {data && (
-        <>
-          <section className="space-y-2">
-            <h1 className="text-3xl font-semibold text-neutral-100">
-              {data.address || 'Unknown property'}
-            </h1>
-            <div className="text-sm uppercase tracking-wide text-neutral-400">
-              {data.borough_full ?? data.borough ?? '—'}
-            </div>
-            <div className="text-xs font-mono text-neutral-500">BBL {data.bbl}</div>
-          </section>
+        {data && (
+          <>
+            <section className="space-y-2">
+              <h1 className="text-3xl font-semibold text-floral_white-500">
+                {data.address || 'Unknown property'}
+              </h1>
+              <div className="text-sm uppercase tracking-wide text-dust_grey-500">
+                {data.borough_full ?? data.borough ?? '—'}
+              </div>
+              <div className="text-xs font-mono text-dust_grey-500">BBL {data.bbl}</div>
+            </section>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>Property Facts</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <dl className="grid grid-cols-1 gap-4 text-sm text-neutral-300">
-                  <div>
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      Year built
-                    </dt>
-                    <dd className="text-lg text-neutral-100">
-                      {formatYear(data.yearbuilt ?? data.year_built)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      Floors
-                    </dt>
-                    <dd className="text-lg text-neutral-100">
-                      {formatNumber(data.numfloors ?? data.floors)}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      Units
-                    </dt>
-                    <dd className="text-lg text-neutral-100">
-                      {formatNumber(data.unitstotal ?? data.units_total, 'total')} •{' '}
-                      {formatNumber(data.unitsres, 'residential')}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      Zoning
-                    </dt>
-                    <dd className="text-lg text-neutral-100">
-                      {data.zonedist1 || '—'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      Land use
-                    </dt>
-                    <dd className="text-lg text-neutral-100">
-                      {data.landuse || '—'}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      Building area
-                    </dt>
-                    <dd className="text-lg text-neutral-100">
-                      {formatNumber(data.bldgarea, 'sf')}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                      Lot area
-                    </dt>
-                    <dd className="text-lg text-neutral-100">
-                      {formatNumber(data.lotarea, 'sf')}
-                    </dd>
-                  </div>
-                </dl>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Permits</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {!permitInfo.hasData && (
-                  <div className="text-sm text-neutral-400">No recent permit data.</div>
-                )}
-                {permitInfo.hasData && (
-                  <dl className="space-y-3 text-sm text-neutral-200">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Card className="!border-charcoal_brown-600 !bg-charcoal_brown-400">
+                <CardHeader>
+                  <CardTitle className="!text-floral_white-500">Property Facts</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <dl className="grid grid-cols-1 gap-4 text-sm text-floral_white-500">
                     <div>
-                      <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                        Permits (12 months)
+                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                        Year built
                       </dt>
-                      <dd className="text-lg text-neutral-100">
-                        {permitInfo.count === null
-                          ? '—'
-                          : permitInfo.count.toLocaleString()}
+                      <dd className="text-lg text-floral_white-500">
+                        {formatYear(data.yearbuilt ?? data.year_built)}
                       </dd>
                     </div>
                     <div>
-                      <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                        Latest permit date
+                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                        Floors
                       </dt>
-                      <dd className="text-lg text-neutral-100">
-                        {formatDate(permitInfo.date)}
+                      <dd className="text-lg text-floral_white-500">
+                        {formatNumber(data.numfloors ?? data.floors)}
                       </dd>
                     </div>
-                    {permitInfo.description && (
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                        Units
+                      </dt>
+                      <dd className="text-lg text-floral_white-500">
+                        {formatNumber(data.unitstotal ?? data.units_total, 'total')} •{' '}
+                        {formatNumber(data.unitsres, 'residential')}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                        Zoning
+                      </dt>
+                      <dd className="text-lg text-floral_white-500">
+                        {data.zonedist1 || '—'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                        Land use
+                      </dt>
+                      <dd className="text-lg text-floral_white-500">
+                        {data.landuse || '—'}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                        Building area
+                      </dt>
+                      <dd className="text-lg text-floral_white-500">
+                        {formatNumber(data.bldgarea, 'sf')}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                        Lot area
+                      </dt>
+                      <dd className="text-lg text-floral_white-500">
+                        {formatNumber(data.lotarea, 'sf')}
+                      </dd>
+                    </div>
+                  </dl>
+                </CardContent>
+              </Card>
+
+              <Card className="!border-charcoal_brown-600 !bg-charcoal_brown-400">
+                <CardHeader>
+                  <CardTitle className="!text-floral_white-500">Permits</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {!permitInfo.hasData && (
+                    <div className="text-sm text-dust_grey-400">No recent permit data.</div>
+                  )}
+                  {permitInfo.hasData && (
+                    <dl className="space-y-3 text-sm text-floral_white-500">
                       <div>
-                        <dt className="text-xs uppercase tracking-wide text-neutral-500">
-                          Description
+                        <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                          Permits (12 months)
                         </dt>
-                        <dd className="text-sm text-neutral-200">
-                          {permitInfo.description}
+                        <dd className="text-lg text-floral_white-500">
+                          {permitInfo.count === null
+                            ? '—'
+                            : permitInfo.count.toLocaleString()}
                         </dd>
                       </div>
-                    )}
-                  </dl>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </>
-      )}
+                      <div>
+                        <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                          Latest permit date
+                        </dt>
+                        <dd className="text-lg text-floral_white-500">
+                          {formatDate(permitInfo.date)}
+                        </dd>
+                      </div>
+                      {permitInfo.description && (
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Description
+                          </dt>
+                          <dd className="text-sm text-floral_white-500">
+                            {permitInfo.description}
+                          </dd>
+                        </div>
+                      )}
+                    </dl>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }
