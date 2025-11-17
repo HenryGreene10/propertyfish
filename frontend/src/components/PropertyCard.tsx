@@ -52,10 +52,28 @@ export default function PropertyCard({
 }: PropertyCardProps) {
   const styles = VARIANTS[variant];
   const boroughLabel = p.borough_full ?? p.borough ?? '—';
+  const stories = p.stories ?? p.numfloors ?? null;
+  const lotSqft = p.lot_sqft ?? p.lotarea ?? null;
+  const buildingDimensions = p.building_dimensions ?? '—';
+  const lotDimensions = p.lot_dimensions ?? '—';
+  const lastSaleDate = p.last_sale_date ?? '—';
+  const lastSalePrice =
+    p.last_sale_price != null ? `$${p.last_sale_price.toLocaleString()}` : '—';
+  const taxYear = p.tax_year ?? '—';
+  const marketValue =
+    p.market_value != null ? `$${p.market_value.toLocaleString()}` : '—';
+  const taxAmount =
+    p.tax_amount != null ? `$${p.tax_amount.toLocaleString()}` : '—';
   const yearBuilt = formatYear(p.yearbuilt ?? p.year_built);
-  const floors = formatMetric(p.numfloors ?? p.floors);
+  const floors = stories ?? '—';
   const units = formatMetric(p.unitstotal ?? p.units_total);
-  const zoning = p.zonedist1 || '—';
+  const zoningValue =
+    p.zoning && p.zoning.trim() !== ''
+      ? p.zoning
+      : p.zonedist1 && p.zonedist1.trim() !== ''
+        ? p.zonedist1
+        : null;
+  const zoning = zoningValue ?? '—';
   const landUse = p.landuse || '—';
 
   return (
@@ -74,10 +92,23 @@ export default function PropertyCard({
         </CardHeader>
         <CardContent className="gap-1.5">
           <div className={mergeClasses('text-dust_grey-400', styles.facts)}>
-            Built {yearBuilt} • {floors} floors • {units} units
+            Built {yearBuilt} • floors {floors} • {units} units
           </div>
           <div className={mergeClasses('text-dust_grey-400', styles.secondary)}>
             <span className="text-spicy_paprika-500">Zoning</span> {zoning} • {landUse}
+          </div>
+          <div className={mergeClasses('text-dust_grey-400', styles.secondary)}>
+            Building dims {buildingDimensions} • Lot{' '}
+            {lotSqft != null ? `${lotSqft.toLocaleString()} sf` : '—'}
+          </div>
+          <div className={mergeClasses('text-dust_grey-400', styles.secondary)}>
+            Lot dims {lotDimensions}
+          </div>
+          <div className={mergeClasses('text-dust_grey-400', styles.secondary)}>
+            Last sale {lastSaleDate} • {lastSalePrice}
+          </div>
+          <div className={mergeClasses('text-dust_grey-400', styles.secondary)}>
+            Tax year {taxYear} • Tax {taxAmount} • Market {marketValue}
           </div>
         </CardContent>
       </Card>

@@ -169,7 +169,7 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
                         Zoning
                       </dt>
                       <dd className="text-lg text-floral_white-500">
-                        {data.zonedist1 || '—'}
+                        {data.zoning ?? data.zonedist1 ?? '—'}
                       </dd>
                     </div>
                     <div>
@@ -197,6 +197,35 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
                       </dd>
                     </div>
                   </dl>
+                  <div className="mt-8 space-y-1">
+                    <div className="font-semibold text-sm tracking-wide text-dust_grey-300">
+                      Sales &amp; Taxes
+                    </div>
+                    <div className="text-sm text-dust_grey-200">
+                      Last sale date: {data.last_sale_date ?? '—'}
+                    </div>
+                    <div className="text-sm text-dust_grey-200">
+                      Last sale price:{' '}
+                      {data.last_sale_price != null
+                        ? `$${data.last_sale_price.toLocaleString()}`
+                        : '—'}
+                    </div>
+                    <div className="text-sm text-dust_grey-200">
+                      Tax year: {data.tax_year ?? '—'}
+                    </div>
+                    <div className="text-sm text-dust_grey-200">
+                      Market value:{' '}
+                      {data.market_value != null
+                        ? `$${data.market_value.toLocaleString()}`
+                        : '—'}
+                    </div>
+                    <div className="text-sm text-dust_grey-200">
+                      Tax amount:{' '}
+                      {data.tax_amount != null
+                        ? `$${data.tax_amount.toLocaleString()}`
+                        : '—'}
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 

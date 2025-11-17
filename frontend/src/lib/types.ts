@@ -26,6 +26,11 @@ export interface PropertySummary {
   numfloors?: number | null;
   unitsres?: number | null;
   unitstotal?: number | null;
+  stories?: number | null;
+  lot_sqft?: number | null;
+  building_dimensions?: string | null;
+  lot_dimensions?: string | null;
+  zoning?: string | null;
   zonedist1?: string | null;
   landuse?: string | null;
   bldgarea?: number | null;
@@ -39,8 +44,18 @@ export interface PropertySummary {
   permit_count_12m?: number | null;
   last_permit?: string | null;
   last_permit_date?: string | null;
+  last_sale_date?: string | null;
+  last_sale_price?: number | null;
+  tax_year?: number | null;
+  market_value?: number | null;
+  tax_amount?: number | null;
 }
 
 export type PropertyDetail = PropertySummary & {
+  last_sale_date?: string | null;
+  last_sale_price?: number | null;
+  tax_year?: number | null;
+  market_value?: number | null;
+  tax_amount?: number | null;
   [key: string]: Serializable;
 };

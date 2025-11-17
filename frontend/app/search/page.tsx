@@ -20,6 +20,11 @@ type SearchItem = {
   unitsres?: number | null;
   unitstotal?: number | null;
   units_total?: number | null;
+  stories?: number | null;
+  lot_sqft?: number | null;
+  building_dimensions?: string | null;
+  lot_dimensions?: string | null;
+  zoning?: string | null;
   zonedist1?: string | null;
   landuse?: string | null;
   bldgarea?: number | null;
@@ -30,6 +35,11 @@ type SearchItem = {
   last_permit_date?: string | null;
   latest_permit_description?: string | null;
   last_permit?: string | null;
+  last_sale_date?: string | null;
+  last_sale_price?: number | null;
+  tax_year?: number | null;
+  market_value?: number | null;
+  tax_amount?: number | null;
 };
 
 type SearchResponse = {
@@ -38,6 +48,7 @@ type SearchResponse = {
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
+const PAGE_SIZE = 24;
 
 const SORT_WHITELIST: ReadonlySet<NonNullable<SearchFilters['sort']>> = new Set([
   'last_permit_date',
@@ -145,9 +156,17 @@ function mapToCard(item: SearchItem): PropertySummary {
     year_built: item.year_built,
     numfloors: preferNumber(item.numfloors, item.floors),
     floors: item.floors,
+    stories: item.stories ?? item.numfloors ?? null,
     unitsres: item.unitsres,
     unitstotal: preferNumber(item.unitstotal, item.units_total),
     units_total: item.units_total,
+    lot_sqft: (item.lot_sqft ?? item.lotarea) ?? null,
+    building_dimensions: item.building_dimensions ?? null,
+    lot_dimensions: item.lot_dimensions ?? null,
+    zoning:
+      item.zoning && item.zoning.trim() !== ''
+        ? item.zoning
+        : item.zonedist1 || null,
     zonedist1: item.zonedist1,
     landuse: item.landuse,
     bldgarea: item.bldgarea,
@@ -161,35 +180,66 @@ function mapToCard(item: SearchItem): PropertySummary {
       item.last_permit,
     ),
     last_permit: item.last_permit,
+    last_sale_date: item.last_sale_date ?? null,
+    last_sale_price: item.last_sale_price ?? null,
+    tax_year: item.tax_year ?? null,
+    market_value: item.market_value ?? null,
+    tax_amount: item.tax_amount ?? null,
   };
 }
 
 export default function SearchPage() {
   const [results, setResults] = useState<PropertySummary[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [limit, setLimit] = useState(PAGE_SIZE);
+  const [page, setPage] = useState(0);
+  const [isEnd, setIsEnd] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [query, setQuery] = useState('');
   const [boroughFilter, setBoroughFilter] = useState('');
   const [yearMin, setYearMin] = useState<number | ''>('');
+  const [activeFilters, setActiveFilters] = useState<Partial<SearchFilters>>({
+    limit: PAGE_SIZE,
+    offset: 0,
+  });
 
   const handleApply = async (nextFilters: Partial<SearchFilters>) => {
+    const appliedLimit = clampLimit(nextFilters.limit ?? limit) ?? PAGE_SIZE;
+    const baseFilters: Partial<SearchFilters> = {
+      ...nextFilters,
+      limit: appliedLimit,
+      offset: 0,
+    };
+
     setIsLoading(true);
     setError(null);
     setResults([]);
+    setTotal(null);
+    setPage(0);
+    setLimit(appliedLimit);
+    setIsEnd(false);
+    setActiveFilters(baseFilters);
 
-    const params = buildSearchParams(nextFilters);
+    const params = buildSearchParams(baseFilters);
     const qs = params.toString();
     const url = `${API_BASE}/api/search${qs ? `?${qs}` : ''}`;
     console.debug('PF-FE-SEARCH', url);
 
     try {
+      // Paging: reset to page 0 and fetch PAGE_SIZE rows; subsequent clicks use offset to append.
       const res = await fetch(url, { cache: 'no-store' });
       if (!res.ok) {
         throw new Error(`Request failed with status ${res.status}`);
       }
       const data = toSearchResponse(await res.json());
-      setResults(data.items.map(mapToCard));
+      const mapped = data.items.map(mapToCard);
+      setResults(mapped);
+      setTotal(data.total);
+      setPage(0);
+      setIsEnd(mapped.length >= data.total);
       setHasSearched(true);
     } catch (err) {
       const message =
@@ -205,7 +255,7 @@ export default function SearchPage() {
     handleApply({
       q: query.trim() === '' ? undefined : query.trim(),
       borough: boroughFilter === '' ? undefined : (boroughFilter as SearchFilters['borough']),
-      limit: 20,
+      limit,
       offset: 0,
       year_min: yearMin === '' ? undefined : yearMin,
     });
@@ -213,6 +263,73 @@ export default function SearchPage() {
 
   const fieldClasses =
     'w-full rounded-lg border border-charcoal_brown-600 bg-carbon_black-300 px-3 py-2 text-sm text-floral_white placeholder:text-dust_grey-500 focus:border-spicy_paprika-500 focus:ring-2 focus:ring-spicy_paprika-500 focus:outline-none transition';
+
+  const boroughLabels: Record<NonNullable<SearchFilters['borough']>, string> = {
+    MN: 'Manhattan',
+    BX: 'Bronx',
+    BK: 'Brooklyn',
+    QN: 'Queens',
+    SI: 'Staten Island',
+  };
+
+  const activeQuery = typeof activeFilters.q === 'string' ? activeFilters.q.trim() : '';
+  const activeBorough = activeFilters.borough;
+  const boroughLabel = activeBorough ? boroughLabels[activeBorough] ?? activeBorough : '';
+  const shouldShowSummary = hasSearched && total !== null && !error;
+
+  const summaryText = (() => {
+    if (!shouldShowSummary || total === null) return '';
+    if (activeQuery) {
+      return `Showing ${results.length} of ${total} matches for "${activeQuery}"${
+        boroughLabel ? ` in ${boroughLabel}` : ''
+      }`;
+    }
+    if (boroughLabel) {
+      return `Showing ${results.length} of ${total} properties in ${boroughLabel}`;
+    }
+    return `Showing ${results.length} of ${total} properties matching your filters`;
+  })();
+
+  const handleLoadMore = async () => {
+    if (isLoading || isLoadingMore || isEnd || total === null) return;
+    const nextPage = page + 1;
+    const nextOffset = nextPage * limit;
+    const params = buildSearchParams({
+      ...activeFilters,
+      limit,
+      offset: nextOffset,
+    });
+    const qs = params.toString();
+    const url = `${API_BASE}/api/search${qs ? `?${qs}` : ''}`;
+    console.debug('PF-FE-SEARCH load more', url);
+
+    setIsLoadingMore(true);
+    setError(null);
+
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) {
+        throw new Error(`Request failed with status ${res.status}`);
+      }
+      const data = toSearchResponse(await res.json());
+      const mapped = data.items.map(mapToCard);
+      setTotal((prev) => data.total ?? prev ?? mapped.length);
+      setResults((prev) => {
+        const combined = [...prev, ...mapped];
+        return combined;
+      });
+      const nextTotal = data.total ?? total ?? results.length + mapped.length;
+      const combinedLength = results.length + mapped.length;
+      setPage(nextPage);
+      setIsEnd(combinedLength >= nextTotal);
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Unable to fetch search results';
+      setError(message);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-carbon_black text-floral_white-500">
@@ -289,6 +406,9 @@ export default function SearchPage() {
         {error && !isLoading && (
           <div className="text-sm text-spicy_paprika-500">Error: {error}</div>
         )}
+        {shouldShowSummary && (
+          <div className="mb-4 text-sm text-dust_grey-400">{summaryText}</div>
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {results.map((item) => (
             <PropertyCard key={item.bbl} p={item} />
@@ -299,6 +419,18 @@ export default function SearchPage() {
             No properties found. Try broadening your search (for example, just "82nd street" or
             removing the year filter).
           </p>
+        )}
+        {results.length > 0 && !isEnd && total !== null && results.length < total && !isLoading && (
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={handleLoadMore}
+              disabled={isLoading || isLoadingMore}
+              className="rounded-lg bg-charcoal_brown-500 px-6 py-2 text-sm font-medium text-floral_white-500 transition hover:bg-charcoal_brown-400 disabled:cursor-not-allowed disabled:bg-charcoal_brown-700"
+            >
+              {isLoadingMore ? 'Loading…' : 'Load more'}
+            </button>
+          </div>
         )}
       </div>
     </div>
