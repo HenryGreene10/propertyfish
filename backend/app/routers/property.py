@@ -1,7 +1,8 @@
-from datetime import datetime, timezone
-from typing import Any, Dict, Generator, List
+from datetime import date, datetime, timezone
+from typing import Any, Dict, Generator, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 
 from app.db.connection import get_conn as get_conn_cm
 from app.services.property_service import (
@@ -23,6 +24,34 @@ def get_conn() -> Generator:
 
 router = APIRouter(prefix="/api/property", tags=["property"])
 legacy_router = APIRouter(prefix="/property", tags=["property"])
+
+
+class PropertySummary(BaseModel):
+    bbl: str
+    address: Optional[str] = None
+    borough_full: Optional[str] = None
+    zonedist1: Optional[str] = None
+    yearbuilt: Optional[int] = None
+    unitsres: Optional[int] = None
+    unitstotal: Optional[int] = None
+    bldgarea: Optional[float] = None
+    lotarea: Optional[float] = None
+    permit_count_12m: Optional[int] = None
+    last_permit_date: Optional[date] = None
+
+
+class PropertyPermit(BaseModel):
+    job_number: Optional[str] = None
+    status: Optional[str] = None
+    issuance_date: Optional[date] = None
+    job_type: Optional[str] = None
+    description: Optional[str] = None
+    source_url: Optional[str] = None
+
+
+class PropertyDetailResponse(BaseModel):
+    summary: PropertySummary
+    recent_permits: List[PropertyPermit]
 
 
 def _resolve(
@@ -55,6 +84,89 @@ def resolve(
     conn=Depends(get_conn),
 ):
     return _resolve(conn, address, houseno, street, borough)
+
+
+def _property_search_columns(conn) -> set[str]:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = 'property_search'
+            """,
+        )
+        rows = cur.fetchall() or []
+    return {row["column_name"] for row in rows}
+
+
+@router.get("/{bbl}", response_model=PropertyDetailResponse)
+def property_detail(bbl: str, conn=Depends(get_conn)) -> PropertyDetailResponse:
+    try:
+        bbl_int = int(str(bbl))
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid BBL")
+
+    available_columns = _property_search_columns(conn)
+    column_map = {
+        "bbl": "bbl",
+        "address": "address",
+        "borough_full": "borough_full",
+        "zonedist1": "zonedist1",
+        "yearbuilt": "year_built",
+        "unitsres": "unitsres",
+        "unitstotal": "unitstotal",
+        "bldgarea": "bldgarea",
+        "lotarea": "lotarea",
+        "permit_count_12m": "permit_count_12m",
+        "last_permit_date": "last_permit_date",
+    }
+
+    select_parts: List[str] = []
+    for alias, column_name in column_map.items():
+        if column_name in available_columns:
+            if alias == "bbl":
+                select_parts.append(f"CAST(ps.{column_name} AS text) AS {alias}")
+            else:
+                select_parts.append(f"ps.{column_name} AS {alias}")
+        else:
+            select_parts.append(f"NULL AS {alias}")
+
+    summary_sql = f"""
+      SELECT {', '.join(select_parts)}
+      FROM property_search ps
+      WHERE ps.bbl = %s::bigint
+      LIMIT 1
+    """
+
+    permits_sql = """
+      SELECT
+        job_number,
+        status,
+        issuance_date,
+        job_type,
+        description,
+        source_url
+      FROM dob_permits
+      WHERE bbl ~ '^[0-9]'
+        AND NULLIF(regexp_replace(bbl, '\..*', ''), '')::bigint = %s::bigint
+      ORDER BY COALESCE(issuance_date, filing_date, filed_date, status_date, latest_status_date) DESC NULLS LAST
+      LIMIT 5
+    """
+
+    with conn.cursor() as cur:
+        cur.execute(summary_sql, (bbl_int,))
+        summary_row = cur.fetchone()
+        if not summary_row:
+            raise HTTPException(status_code=404, detail="Not found")
+        summary = PropertySummary(**dict(summary_row))
+
+        cur.execute(permits_sql, (bbl_int,))
+        permits_rows = cur.fetchall() or []
+
+    return PropertyDetailResponse(
+        summary=summary,
+        recent_permits=[PropertyPermit(**dict(row)) for row in permits_rows],
+    )
 
 
 @router.get("/{bbl}/permits")

@@ -56,22 +56,12 @@ async def get_pool():
 
 class SearchRow(BaseModel):
     bbl: str
-    address: Optional[str] = None
+    address: str
     borough_full: Optional[str] = None
+    zonedist1: Optional[str] = None
     yearbuilt: Optional[int] = None
     unitsres: Optional[int] = None
     unitstotal: Optional[int] = None
-    stories: Optional[float] = None
-    building_dimensions: Optional[str] = None
-    lot_sqft: Optional[float] = None
-    lot_dimensions: Optional[str] = None
-    zoning: Optional[str] = None
-    buildable_area: Optional[float] = None
-    last_sale_date: Optional[date] = None
-    last_sale_price: Optional[float] = None
-    tax_year: Optional[int] = None
-    market_value: Optional[float] = None
-    tax_amount: Optional[float] = None
     permit_count_12m: Optional[int] = None
     last_permit_date: Optional[date] = None
 
@@ -81,82 +71,18 @@ class SearchResponse(BaseModel):
     rows: list[SearchRow]
 
 
-class PropertyDetail(BaseModel):
-    bbl: str
-    address: Optional[str] = None
-    borough_full: Optional[str] = None
-    yearbuilt: Optional[int] = None
-    numfloors: Optional[float] = None
-    unitsres: Optional[int] = None
-    unitstotal: Optional[int] = None
-    landuse: Optional[str] = None
-    zoning: Optional[str] = None
-    bldgarea: Optional[float] = None
-    lotarea: Optional[float] = None
-    building_dimensions: Optional[str] = None
-    lot_dimensions: Optional[str] = None
-    buildable_area: Optional[float] = None
-    permit_count_12m: Optional[int] = None
-    last_permit_date: Optional[date] = None
-    # placeholders for future datasets
-    last_sale_date: Optional[date] = None
-    last_sale_price: Optional[float] = None
-    tax_year: Optional[int] = None
-    market_value: Optional[float] = None
-    tax_amount: Optional[float] = None
-
-
 def _map_search_row(record: Mapping[str, Any]) -> SearchRow:
     data = dict(record)
-    # TODO: Populate building_dimensions, lot_dimensions, and sales/tax fields once joined data is available.
     return SearchRow(
         bbl=data["bbl"],
-        address=data.get("address"),
+        address=data["address"],
         borough_full=data.get("borough_full"),
+        zonedist1=data.get("zonedist1"),
         yearbuilt=data.get("yearbuilt"),
         unitsres=data.get("unitsres"),
         unitstotal=data.get("unitstotal"),
-        stories=data.get("numfloors"),
-        building_dimensions=data.get("building_dimensions"),
-        lot_sqft=data.get("lotarea"),
-        lot_dimensions=data.get("lot_dimensions"),
-        zoning=data.get("zoning"),
-        buildable_area=data.get("bldgarea"),
-        last_sale_date=data.get("last_sale_date"),
-        last_sale_price=data.get("last_sale_price"),
-        tax_year=data.get("tax_year"),
-        market_value=data.get("market_value"),
-        tax_amount=data.get("tax_amount"),
         permit_count_12m=data.get("permit_count_12m"),
         last_permit_date=data.get("last_permit_date"),
-    )
-
-
-def _map_property_detail(record: Mapping[str, Any]) -> PropertyDetail:
-    data = dict(record)
-    # TODO: Populate building_dimensions, lot_dimensions, and sales/tax fields once joined data is available.
-    return PropertyDetail(
-        bbl=data["bbl"],
-        address=data.get("address"),
-        borough_full=data.get("borough_full"),
-        yearbuilt=data.get("yearbuilt"),
-        numfloors=data.get("numfloors"),
-        unitsres=data.get("unitsres"),
-        unitstotal=data.get("unitstotal"),
-        landuse=data.get("landuse"),
-        zoning=data.get("zoning"),
-        bldgarea=data.get("bldgarea"),
-        lotarea=data.get("lotarea"),
-        building_dimensions=None,
-        lot_dimensions=None,
-        buildable_area=data.get("bldgarea"),
-        permit_count_12m=data.get("permit_count_12m"),
-        last_permit_date=data.get("last_permit_date"),
-        last_sale_date=None,
-        last_sale_price=None,
-        tax_year=None,
-        market_value=None,
-        tax_amount=None,
     )
 
 
@@ -188,13 +114,10 @@ async def search(
         "(ps.bbl)::text AS bbl",
         "ps.address AS address",
         "ps.borough_full AS borough_full",
+        "ps.zonedist1 AS zonedist1",
         "ps.yearbuilt AS yearbuilt",
-        "ps.numfloors::float8 AS numfloors",
         "ps.unitsres AS unitsres",
         "ps.unitstotal AS unitstotal",
-        "ps.zonedist1 AS zoning",
-        "ps.bldgarea::float8 AS bldgarea",
-        "ps.lotarea::float8 AS lotarea",
         "ps.permit_count_12m AS permit_count_12m",
         "ps.last_permit_date AS last_permit_date",
     ]
@@ -244,7 +167,8 @@ async def search(
         logger.debug("PF-BE-SEARCH ignoring units_min until column is available")
 
     if year_min is not None:
-        logger.debug("PF-BE-SEARCH skipping year_min; restricted column set")
+        where_clauses.append(f"ps.yearbuilt >= {add_param(year_min)}")
+        active_filters.append("year_min")
 
     if permits_min_12m is not None:
         where_clauses.append(f"ps.permit_count_12m >= {add_param(permits_min_12m)}")
@@ -271,10 +195,10 @@ async def search(
     order_by_parts: list[str] = []
     rows_args: list[object] = list(where_args)
     curated_order: list[str] = [
-        "CASE WHEN ps.permit_count_12m > 0 THEN 1 ELSE 0 END DESC",
-        "ps.unitsres DESC NULLS LAST",
+        "ps.permit_count_12m DESC NULLS LAST",
         "ps.last_permit_date DESC NULLS LAST",
-        "ps.bbl ASC",
+        "ps.yearbuilt DESC NULLS LAST",
+        "ps.address ASC",
     ]
 
     similarity_placeholder = None
@@ -352,30 +276,3 @@ async def search(
 
     mapped_rows = [_map_search_row(r) for r in rows]
     return {"total": total, "rows": mapped_rows}
-
-
-@router.get("/api/properties/{bbl}", response_model=PropertyDetail)
-async def property_detail(bbl: str, pool=Depends(get_pool)):
-    q = f"""
-      SELECT
-        (ps.bbl)::text            AS bbl,
-        ps.address                AS address,
-        ps.borough_full           AS borough_full,
-        ps.yearbuilt              AS yearbuilt,
-        ps.numfloors::float8      AS numfloors,
-        ps.unitsres               AS unitsres,
-        ps.unitstotal             AS unitstotal,
-        ps.landuse                AS landuse,
-        ps.zonedist1              AS zoning,
-        ps.bldgarea::float8       AS bldgarea,
-        ps.lotarea::float8        AS lotarea,
-        ps.permit_count_12m       AS permit_count_12m,
-        ps.last_permit_date       AS last_permit_date
-      FROM {TABLE_SEARCH} ps
-      WHERE ps.bbl = $1
-    """
-    async with pool.acquire() as conn:
-        row = await conn.fetchrow(q, bbl)
-        if not row:
-            raise HTTPException(404, "Not found")
-        return _map_property_detail(row)

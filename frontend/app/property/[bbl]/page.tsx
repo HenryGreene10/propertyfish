@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import type { PropertyDetail } from '@/lib/types';
@@ -49,6 +49,7 @@ type PropertyDetailPageProps = {
 
 export default function PropertyDetailPage({ params }: PropertyDetailPageProps) {
   const { bbl } = params;
+  const router = useRouter();
   const [data, setData] = useState<PropertyDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -106,12 +107,13 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
   return (
     <div className="min-h-screen bg-carbon_black text-floral_white-500">
       <div className="mx-auto max-w-5xl space-y-6 p-6">
-        <Link
-          href="/search"
+        <button
+          type="button"
+          onClick={() => router.back()}
           className="inline-flex items-center text-sm text-spicy_paprika-500 hover:text-spicy_paprika-400"
         >
           ← Back to search
-        </Link>
+        </button>
         {isLoading && <div className="text-sm text-dust_grey-400">Loading property…</div>}
         {!isLoading && error && (
           <div className="text-sm text-spicy_paprika-500">Error: {error}</div>
