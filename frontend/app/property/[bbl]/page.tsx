@@ -143,6 +143,10 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
               <div className="text-xs font-mono text-dust_grey-500">BBL {data.bbl}</div>
             </section>
 
+            <div className="mt-6 mb-8 flex h-56 w-full items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900/80 text-xs uppercase tracking-wide text-neutral-500">
+              Property photo coming soon
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card className="!border-charcoal_brown-600 !bg-charcoal_brown-400">
                 <CardHeader>

@@ -479,6 +479,9 @@ export default function SearchPage() {
               className="block h-full"
             >
               <div className="h-full cursor-pointer rounded-lg border border-charcoal_brown-600 bg-charcoal_brown-400 p-4 shadow-sm transition hover:border-spicy_paprika-500 hover:shadow-md">
+                <div className="mb-3 flex h-28 w-full items-center justify-center rounded-md bg-neutral-800/80 text-[10px] uppercase tracking-wide text-neutral-500">
+                  Photo coming soon
+                </div>
                 <div className="text-sm font-semibold uppercase tracking-wide text-floral_white-500">
                   {item.address ?? 'Unknown address'}
                 </div>
