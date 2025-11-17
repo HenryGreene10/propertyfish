@@ -104,6 +104,15 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
     return { count, date, description, hasData };
   }, [data]);
 
+  const hasAddress = !!(data && data.address && data.address.trim() !== '');
+  const encodedAddress = hasAddress ? encodeURIComponent(`${data?.address}, New York, NY`) : null;
+  const mapsEmbedUrl = encodedAddress
+    ? `https://www.google.com/maps?q=${encodedAddress}&output=embed`
+    : null;
+  const mapsViewUrl = encodedAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`
+    : null;
+
   return (
     <div className="min-h-screen bg-carbon_black text-floral_white-500">
       <div className="mx-auto max-w-5xl space-y-6 p-6">
@@ -134,7 +143,7 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
               <div className="text-xs font-mono text-dust_grey-500">BBL {data.bbl}</div>
             </section>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               <Card className="!border-charcoal_brown-600 !bg-charcoal_brown-400">
                 <CardHeader>
                   <CardTitle className="!text-floral_white-500">Property Facts</CardTitle>
@@ -270,6 +279,37 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
                         </div>
                       )}
                     </dl>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="!border-charcoal_brown-600 !bg-charcoal_brown-400">
+                <CardHeader>
+                  <CardTitle className="!text-floral_white-500">Map</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {hasAddress && mapsEmbedUrl && mapsViewUrl ? (
+                    <>
+                      <iframe
+                        src={mapsEmbedUrl}
+                        className="h-64 w-full rounded-lg border border-neutral-800"
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Property location map"
+                      />
+                      <a
+                        href={mapsViewUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex text-xs text-neutral-400 hover:text-neutral-100"
+                      >
+                        View on Google Maps
+                      </a>
+                    </>
+                  ) : (
+                    <div className="flex h-64 items-center justify-center text-sm text-neutral-500">
+                      Map unavailable — address not yet available for this property.
+                    </div>
                   )}
                 </CardContent>
               </Card>
