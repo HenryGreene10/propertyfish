@@ -86,27 +86,19 @@ def _map_search_row(record: Mapping[str, Any]) -> SearchRow:
     )
 
 
-@router.get("/api/search", response_model=SearchResponse)
-async def search(
-    q: Optional[str] = Query(None, description="Free-text address or BBL"),
-    borough: Optional[str] = Query(None, description="Two-letter code or borough name"),
-    floors_min: Optional[int] = Query(None, ge=0),
-    units_min: Optional[int] = Query(None, ge=0),
-    year_min: Optional[int] = Query(None, ge=0),
-    permits_min_12m: Optional[int] = Query(None, ge=0),
-    sort: Optional[str] = Query(
-        None,
-        description="Sort field: last_permit_date|year_built|permit_count_12m|relevance",
-    ),
-    order: Optional[str] = Query(None, description="asc|desc"),
-    limit: int = Query(20, ge=1, le=200),
-    offset: int = Query(0, ge=0),
-    pool=Depends(get_pool),
-):
-    """Search property inventory with optional filters.
-
-    Response rows expose standardized property card fields sourced from property_search_rich_mv with permit summaries.
-    """
+async def run_search(
+    q: Optional[str],
+    borough: Optional[str],
+    floors_min: Optional[int],
+    units_min: Optional[int],
+    year_min: Optional[int],
+    permits_min_12m: Optional[int],
+    sort: Optional[str],
+    order: Optional[str],
+    limit: int,
+    offset: int,
+    pool,
+) -> tuple[int, list[SearchRow]]:
     limit = max(1, min(limit, 50))
     offset = max(0, offset)
 
@@ -275,4 +267,41 @@ async def search(
         ) from exc
 
     mapped_rows = [_map_search_row(r) for r in rows]
+    return total, mapped_rows
+
+
+@router.get("/api/search", response_model=SearchResponse)
+async def search(
+    q: Optional[str] = Query(None, description="Free-text address or BBL"),
+    borough: Optional[str] = Query(None, description="Two-letter code or borough name"),
+    floors_min: Optional[int] = Query(None, ge=0),
+    units_min: Optional[int] = Query(None, ge=0),
+    year_min: Optional[int] = Query(None, ge=0),
+    permits_min_12m: Optional[int] = Query(None, ge=0),
+    sort: Optional[str] = Query(
+        None,
+        description="Sort field: last_permit_date|year_built|permit_count_12m|relevance",
+    ),
+    order: Optional[str] = Query(None, description="asc|desc"),
+    limit: int = Query(20, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    pool=Depends(get_pool),
+):
+    """Search property inventory with optional filters.
+
+    Response rows expose standardized property card fields sourced from property_search_rich_mv with permit summaries.
+    """
+    total, mapped_rows = await run_search(
+        q=q,
+        borough=borough,
+        floors_min=floors_min,
+        units_min=units_min,
+        year_min=year_min,
+        permits_min_12m=permits_min_12m,
+        sort=sort,
+        order=order,
+        limit=limit,
+        offset=offset,
+        pool=pool,
+    )
     return {"total": total, "rows": mapped_rows}
