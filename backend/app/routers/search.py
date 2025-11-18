@@ -98,6 +98,8 @@ async def run_search(
     limit: int,
     offset: int,
     pool,
+    *,
+    allow_yearbuilt_sort: bool = False,
 ) -> tuple[int, list[SearchRow]]:
     limit = max(1, min(limit, 50))
     offset = max(0, offset)
@@ -175,6 +177,8 @@ async def run_search(
     normalized_order = (order or "").strip().lower() or None
 
     valid_sorts = {"last_permit_date", "permit_count_12m", "relevance"}
+    if allow_yearbuilt_sort:
+        valid_sorts.add("yearbuilt")
     if normalized_sort and normalized_sort not in valid_sorts:
         raise HTTPException(400, f"Invalid sort '{normalized_sort}'")
 
@@ -219,6 +223,8 @@ async def run_search(
         append_sort("last_permit_date", normalized_order)
     elif normalized_sort == "permit_count_12m":
         append_sort("permit_count_12m", normalized_order)
+    elif normalized_sort == "yearbuilt" and allow_yearbuilt_sort:
+        append_sort("yearbuilt", normalized_order)
 
     order_by_parts.extend(curated_order)
     order_by = ", ".join(order_by_parts)

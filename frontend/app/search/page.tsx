@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { FormEvent, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-import type { PropertySummary, SearchFilters } from '@/lib/types';
+import type { ChatResponse, PropertySummary, SearchFilters } from '@/lib/types';
 
 type SearchItem = {
   bbl: string;
@@ -46,6 +46,14 @@ type SearchItem = {
 type SearchResponse = {
   total: number;
   items: SearchItem[];
+};
+
+type ChatTurn = {
+  id: string;
+  user: string;
+  reply: string;
+  total: number;
+  matches: number;
 };
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
@@ -208,6 +216,24 @@ export default function SearchPage() {
     limit: PAGE_SIZE,
     offset: 0,
   });
+  const [chatQuestion, setChatQuestion] = useState<string>('');
+  const [chatAnswer, setChatAnswer] = useState<string | null>(null);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [chatTotal, setChatTotal] = useState<number | null>(null);
+  const [chatRows, setChatRows] = useState<PropertySummary[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatTurn[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const raw = window.sessionStorage.getItem('pf_chat_history_v1');
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) return [];
+      return parsed as ChatTurn[];
+    } catch {
+      return [];
+    }
+  });
 
   const handleApply = async (
     nextFilters: Partial<SearchFilters>,
@@ -287,6 +313,82 @@ export default function SearchPage() {
     });
   };
 
+  const handleChatSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const text = chatQuestion.trim();
+    if (!text) return;
+
+    setChatLoading(true);
+    setChatError(null);
+    const body = {
+      message: text,
+      borough: activeFilters.borough || null,
+      year_min: activeFilters.year_min ?? null,
+    };
+
+    try {
+      const res = await fetch(`${API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        throw new Error(`Chat request failed with status ${res.status}`);
+      }
+      const data: ChatResponse = await res.json();
+      const mappedRows: PropertySummary[] = Array.isArray(data.rows)
+        ? data.rows.map((row: any) => ({ ...row }))
+        : [];
+      const nextTotal =
+        typeof data.total === 'number' && Number.isFinite(data.total)
+          ? data.total
+          : mappedRows.length;
+      const filtersFromChat = data.filters || {};
+      const nextFilters: Partial<SearchFilters> = {
+        q: filtersFromChat.q ?? text,
+        borough: (filtersFromChat.borough as SearchFilters['borough']) ?? '',
+        year_min: filtersFromChat.year_min ?? undefined,
+        limit: PAGE_SIZE,
+        offset: 0,
+      };
+
+      setResults(mappedRows);
+      setTotal(nextTotal);
+      setPage(0);
+      setLimit(PAGE_SIZE);
+      setIsEnd(mappedRows.length >= nextTotal);
+      setHasSearched(true);
+      setError(null);
+      setActiveFilters(nextFilters);
+      setChatAnswer(typeof data.message === 'string' ? data.message : null);
+      setChatTotal(nextTotal);
+      setChatRows(mappedRows);
+      setChatQuestion(text);
+      setChatHistory((prev) => {
+        const newTurn: ChatTurn = {
+          id:
+            typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+              ? crypto.randomUUID()
+              : String(Date.now()),
+          user: text,
+          reply: data.message,
+          total: nextTotal,
+          matches: nextTotal,
+        };
+        return [...prev, newTurn];
+      });
+
+      const params = buildSearchParams(nextFilters);
+      const qs = params.toString();
+      router.push(`/search${qs ? `?${qs}` : ''}`, { scroll: false });
+    } catch (err) {
+      console.error('PF-FE-SEARCH chat error', err);
+      setChatError('Something went wrong with chat. Try again.');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!searchParams) return;
 
@@ -322,6 +424,15 @@ export default function SearchPage() {
       { updateUrl: false },
     );
   }, [searchParams, activeFilters.borough, activeFilters.q, activeFilters.year_min, hasSearched]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      window.sessionStorage.setItem('pf_chat_history_v1', JSON.stringify(chatHistory));
+    } catch {
+      // ignore write errors
+    }
+  }, [chatHistory]);
 
   const fieldClasses =
     'w-full rounded-lg border border-charcoal_brown-600 bg-carbon_black-300 px-3 py-2 text-sm text-floral_white placeholder:text-dust_grey-500 focus:border-spicy_paprika-500 focus:ring-2 focus:ring-spicy_paprika-500 focus:outline-none transition';
@@ -468,6 +579,73 @@ export default function SearchPage() {
         {error && !isLoading && (
           <div className="text-sm text-spicy_paprika-500">Error: {error}</div>
         )}
+        <div className="mb-6 rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-neutral-300">
+            Ask PropertyFish <span className="ml-1 text-[10px] font-normal text-neutral-500">beta</span>
+          </h2>
+          <form onSubmit={handleChatSubmit} className="mt-3 flex gap-2">
+            <input
+              type="text"
+              value={chatQuestion}
+              onChange={(e) => setChatQuestion(e.target.value)}
+              placeholder="e.g. new buildings on Broadway with lots of recent permits"
+              className="flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400"
+            />
+            <button
+              type="submit"
+              disabled={chatLoading}
+              className="rounded-md bg-neutral-100 px-4 py-2 text-sm font-medium text-black disabled:opacity-60"
+            >
+              {chatLoading ? 'Asking…' : 'Ask'}
+            </button>
+          </form>
+          {chatError && <p className="mt-2 text-xs text-red-400">{chatError}</p>}
+          {chatAnswer && (
+            <div className="mt-3 space-y-2 text-sm">
+              <div className="text-dust_grey-400">
+                <span className="mr-1 font-semibold">You:</span>
+                {chatQuestion}
+              </div>
+              <div className="text-floral_white-500">
+                <span className="mr-1 font-semibold">PropertyFish:</span>
+                {chatAnswer}
+              </div>
+              {typeof chatTotal === 'number' && (
+                <p className="text-xs text-neutral-500">
+                  Showing up to {Math.min(chatRows.length, 5)} of {chatTotal} matches.
+                </p>
+              )}
+            </div>
+          )}
+          {chatHistory.length > 0 && (
+            <div className="mt-4 space-y-3 text-xs text-neutral-300">
+              {chatHistory.map((turn) => (
+                <div key={turn.id} className="rounded-md border border-neutral-800 bg-neutral-950 p-3">
+                  <div className="text-neutral-500">
+                    <span className="font-semibold text-neutral-400">You:</span> {turn.user}
+                  </div>
+                  <div className="mt-1 text-neutral-200">
+                    <span className="font-semibold text-neutral-100">PropertyFish:</span> {turn.reply}
+                  </div>
+                  <div className="mt-1 text-[11px] text-neutral-600">
+                    {(turn.matches ?? turn.total) ?? 0} matches
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {chatRows.length > 0 && (
+            <ul className="mt-3 space-y-1 text-xs text-neutral-400">
+              {chatRows.slice(0, 5).map((row) => (
+                <li key={row.bbl}>
+                  <span className="text-neutral-200">{row.address ?? 'Unknown address'}</span>
+                  {row.borough_full && <> · {row.borough_full}</>}
+                  {row.yearbuilt && <> · Built {row.yearbuilt}</>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
         {shouldShowSummary && (
           <div className="mb-4 text-sm text-dust_grey-400">{summaryText}</div>
         )}
