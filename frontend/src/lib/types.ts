@@ -59,3 +59,17 @@ export type PropertyDetail = PropertySummary & {
   tax_amount?: number | null;
   [key: string]: Serializable;
 };
+
+export interface ChatFilters {
+  q?: string | null;
+  borough?: 'MN' | 'BK' | 'QN' | 'BX' | 'SI' | null;
+  year_min?: number | null;
+  sort?: string | null;
+}
+
+export interface ChatResponse {
+  message: string;
+  total: number;
+  rows: PropertySummary[];
+  filters: ChatFilters;
+}

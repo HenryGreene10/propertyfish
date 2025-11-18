@@ -41,7 +41,7 @@ app.add_middleware(
 app.include_router(resolve.router, prefix="/resolve", tags=["resolve"])
 app.include_router(property_router.router)
 app.include_router(property_router.legacy_router)
-app.include_router(chat.router, prefix="/chat", tags=["chat"])
+app.include_router(chat.router, prefix="/api", tags=["chat"])
 app.include_router(api_routes.router, prefix="/api", tags=["chat-query"])
 app.include_router(search_router.router)
 
