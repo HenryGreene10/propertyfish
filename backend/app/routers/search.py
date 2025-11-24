@@ -56,14 +56,19 @@ async def get_pool():
 
 class SearchRow(BaseModel):
     bbl: str
-    address: str
+    address: str | None = None
+    borough: str | None = None
     borough_full: Optional[str] = None
-    zonedist1: Optional[str] = None
-    yearbuilt: Optional[int] = None
-    unitsres: Optional[int] = None
-    unitstotal: Optional[int] = None
     permit_count_12m: Optional[int] = None
     last_permit_date: Optional[date] = None
+    yearbuilt: Optional[int] = None
+    numfloors: float | None = None
+    unitsres: Optional[int] = None
+    unitstotal: Optional[int] = None
+    bldgarea: Optional[int] = None
+    lotarea: Optional[int] = None
+    landuse: Optional[str] = None
+    zonedist1: Optional[str] = None
 
 
 class SearchResponse(BaseModel):
@@ -75,14 +80,19 @@ def _map_search_row(record: Mapping[str, Any]) -> SearchRow:
     data = dict(record)
     return SearchRow(
         bbl=data["bbl"],
-        address=data["address"],
+        address=data.get("address"),
+        borough=data.get("borough"),
         borough_full=data.get("borough_full"),
-        zonedist1=data.get("zonedist1"),
-        yearbuilt=data.get("yearbuilt"),
-        unitsres=data.get("unitsres"),
-        unitstotal=data.get("unitstotal"),
         permit_count_12m=data.get("permit_count_12m"),
         last_permit_date=data.get("last_permit_date"),
+        yearbuilt=data.get("yearbuilt"),
+        numfloors=data.get("numfloors"),
+        unitsres=data.get("unitsres"),
+        unitstotal=data.get("unitstotal"),
+        bldgarea=data.get("bldgarea"),
+        lotarea=data.get("lotarea"),
+        landuse=data.get("landuse"),
+        zonedist1=data.get("zonedist1"),
     )
 
 
@@ -107,13 +117,18 @@ async def run_search(
     select_columns = [
         "(ps.bbl)::text AS bbl",
         "ps.address AS address",
+        "ps.borough AS borough",
         "ps.borough_full AS borough_full",
-        "ps.zonedist1 AS zonedist1",
-        "ps.yearbuilt AS yearbuilt",
-        "ps.unitsres AS unitsres",
-        "ps.unitstotal AS unitstotal",
         "ps.permit_count_12m AS permit_count_12m",
         "ps.last_permit_date AS last_permit_date",
+        "ps.yearbuilt AS yearbuilt",
+        "ps.numfloors AS numfloors",
+        "ps.unitsres AS unitsres",
+        "ps.unitstotal AS unitstotal",
+        "ps.bldgarea AS bldgarea",
+        "ps.lotarea AS lotarea",
+        "ps.landuse AS landuse",
+        "ps.zonedist1 AS zonedist1",
     ]
 
     where_clauses: list[str] = [

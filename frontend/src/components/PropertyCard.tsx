@@ -28,6 +28,20 @@ function formatYear(value?: number | null) {
   return String(Math.trunc(value));
 }
 
+function formatFloorsValue(value?: number | null) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return null;
+  }
+  return value.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
+function formatCountValue(value?: number | null) {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return null;
+  }
+  return value.toLocaleString();
+}
+
 const VARIANTS = {
   default: {
     card: '',
@@ -52,7 +66,6 @@ export default function PropertyCard({
 }: PropertyCardProps) {
   const styles = VARIANTS[variant];
   const boroughLabel = p.borough_full ?? p.borough ?? '—';
-  const stories = p.stories ?? p.numfloors ?? null;
   const lotSqft = p.lot_sqft ?? p.lotarea ?? null;
   const buildingDimensions = p.building_dimensions ?? '—';
   const lotDimensions = p.lot_dimensions ?? '—';
@@ -64,9 +77,28 @@ export default function PropertyCard({
     p.market_value != null ? `$${p.market_value.toLocaleString()}` : '—';
   const taxAmount =
     p.tax_amount != null ? `$${p.tax_amount.toLocaleString()}` : '—';
-  const yearBuilt = formatYear(p.yearbuilt ?? p.year_built);
-  const floors = stories ?? '—';
-  const units = formatMetric(p.unitstotal ?? p.units_total);
+  const headerFacts: string[] = [];
+  const builtYearValue = formatYear(p.yearbuilt ?? p.year_built);
+  if (builtYearValue !== '—') {
+    headerFacts.push(`Built ${builtYearValue}`);
+  }
+  const floorsValue = formatFloorsValue(p.numfloors ?? p.floors ?? p.stories ?? null);
+  if (floorsValue) {
+    headerFacts.push(`${floorsValue} floors`);
+  }
+  const unitsParts: string[] = [];
+  const resUnits = formatCountValue(p.unitsres);
+  const totalUnits = formatCountValue(p.unitstotal ?? p.units_total);
+  if (resUnits) {
+    unitsParts.push(`${resUnits} res`);
+  }
+  if (totalUnits) {
+    unitsParts.push(`${totalUnits} total`);
+  }
+  if (unitsParts.length > 0) {
+    headerFacts.push(unitsParts.join(' / '));
+  }
+  const headerFactsLine = headerFacts.join(' · ');
   const zoningValue =
     p.zoning && p.zoning.trim() !== ''
       ? p.zoning
@@ -88,12 +120,12 @@ export default function PropertyCard({
           <CardTitle className={mergeClasses('font-semibold text-floral_white-500', styles.title)}>
             {p.address || 'Unknown address'}
           </CardTitle>
+          {headerFactsLine && (
+            <div className={mergeClasses('text-dust_grey-400', styles.facts)}>{headerFactsLine}</div>
+          )}
           <div className={mergeClasses('text-dust_grey-500', styles.subtitle)}>{boroughLabel}</div>
         </CardHeader>
         <CardContent className="gap-1.5">
-          <div className={mergeClasses('text-dust_grey-400', styles.facts)}>
-            Built {yearBuilt} • floors {floors} • {units} units
-          </div>
           <div className={mergeClasses('text-dust_grey-400', styles.secondary)}>
             <span className="text-spicy_paprika-500">Zoning</span> {zoning} • {landUse}
           </div>

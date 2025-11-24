@@ -3,37 +3,29 @@
 import Link from 'next/link';
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import type { ReadonlyURLSearchParams } from 'next/navigation';
 
-import type { ChatResponse, PropertySummary, SearchFilters } from '@/lib/types';
+import type {
+  ChatResponse,
+  PropertySummary,
+  SearchFilters,
+  SearchResultRow,
+} from '@/lib/types';
 
-type SearchItem = {
-  bbl: string;
-  address: string;
-  borough: string;
-  borough_full?: string | null;
+type SearchItem = SearchResultRow & {
   zipcode?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  yearbuilt?: number | null;
   year_built?: number | null;
-  numfloors?: number | null;
   floors?: number | null;
-  unitsres?: number | null;
-  unitstotal?: number | null;
   units_total?: number | null;
   stories?: number | null;
   lot_sqft?: number | null;
   building_dimensions?: string | null;
   lot_dimensions?: string | null;
   zoning?: string | null;
-  zonedist1?: string | null;
-  landuse?: string | null;
-  bldgarea?: number | null;
-  lotarea?: number | null;
   permit_count_12mo?: number | null;
-  permit_count_12m?: number | null;
   latest_permit_date?: string | null;
-  last_permit_date?: string | null;
   latest_permit_description?: string | null;
   last_permit?: string | null;
   last_sale_date?: string | null;
@@ -585,7 +577,10 @@ export default function SearchPage() {
       const previewRows = toPreviewRows(mappedRows);
       const nextFilters: Partial<SearchFilters> = {
         q: filtersFromChat.q ?? text,
-        borough: (filtersFromChat.borough as SearchFilters['borough']) ?? '',
+        borough:
+          typeof filtersFromChat.borough === 'string' && filtersFromChat.borough.trim() !== ''
+            ? (filtersFromChat.borough as SearchFilters['borough'])
+            : undefined,
         year_min: filtersFromChat.year_min ?? undefined,
         limit: PAGE_SIZE,
         offset: 0,
@@ -1088,6 +1083,21 @@ export default function SearchPage() {
                 <div className="mt-2 text-xs text-dust_grey-300">
                   Permits (12m): {item.permit_count_12m ?? 0} · Last: {item.last_permit_date ?? '—'}
                 </div>
+                <div className="mt-2 text-xs text-dust_grey-300">
+                  Zoning: {item.zonedist1 ?? '—'} · Land use: {item.landuse ?? '—'}
+                </div>
+                {(typeof item.bldgarea === 'number' && Number.isFinite(item.bldgarea)) ||
+                (typeof item.lotarea === 'number' && Number.isFinite(item.lotarea)) ? (
+                  <div className="mt-2 text-xs text-dust_grey-300">
+                    Area: {typeof item.bldgarea === 'number' && Number.isFinite(item.bldgarea)
+                      ? `${item.bldgarea.toLocaleString()} sf`
+                      : '—'}{' '}
+                    · Lot:{' '}
+                    {typeof item.lotarea === 'number' && Number.isFinite(item.lotarea)
+                      ? `${item.lotarea.toLocaleString()} sf`
+                      : '—'}
+                  </div>
+                ) : null}
               </div>
             </Link>
           ))}

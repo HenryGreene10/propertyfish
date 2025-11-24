@@ -43,6 +43,27 @@ function formatDate(value?: string | null) {
   return parsed.toISOString().slice(0, 10);
 }
 
+function formatUnitsDetail(residential?: number | null, total?: number | null) {
+  const resValue =
+    typeof residential === 'number' && Number.isFinite(residential)
+      ? residential.toLocaleString()
+      : null;
+  const totalValue =
+    typeof total === 'number' && Number.isFinite(total)
+      ? total.toLocaleString()
+      : null;
+  if (resValue && totalValue) {
+    return `${resValue} res / ${totalValue} total`;
+  }
+  if (resValue) {
+    return `${resValue} res`;
+  }
+  if (totalValue) {
+    return `${totalValue} total`;
+  }
+  return '—';
+}
+
 type PropertyDetailPageProps = {
   params: { bbl: string };
 };
@@ -113,6 +134,17 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
     ? `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`
     : null;
 
+  const detailYearBuilt = data ? formatYear(data.yearbuilt ?? data.year_built) : '—';
+  const detailFloors = data ? formatNumber(data.numfloors ?? data.floors) : '—';
+  const detailUnits = data
+    ? formatUnitsDetail(data.unitsres, (data.unitstotal ?? data.units_total) ?? null)
+    : '—';
+  const detailBuildingArea = data ? formatNumber(data.bldgarea, 'sf') : '—';
+  const detailLotArea = data
+    ? formatNumber((data.lotarea ?? data.lot_sqft) ?? null, 'sf')
+    : '—';
+  const detailZoningDistrict = data ? data.zonedist1 ?? data.zoning ?? '—' : '—';
+
   return (
     <div className="min-h-screen bg-carbon_black text-floral_white-500">
       <div className="mx-auto max-w-5xl space-y-6 p-6">
@@ -153,65 +185,57 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
                   <CardTitle className="!text-floral_white-500">Property Facts</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <dl className="grid grid-cols-1 gap-4 text-sm text-floral_white-500">
+                  <div className="space-y-4">
                     <div>
-                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
-                        Year built
-                      </dt>
-                      <dd className="text-lg text-floral_white-500">
-                        {formatYear(data.yearbuilt ?? data.year_built)}
-                      </dd>
+                      <div className="text-sm font-semibold uppercase tracking-wide text-dust_grey-300">
+                        Building Facts
+                      </div>
+                      <dl className="mt-3 grid grid-cols-1 gap-4 text-sm text-floral_white-500">
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Year built
+                          </dt>
+                          <dd className="text-lg text-floral_white-500">{detailYearBuilt}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Floors
+                          </dt>
+                          <dd className="text-lg text-floral_white-500">{detailFloors}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Residential / total units
+                          </dt>
+                          <dd className="text-lg text-floral_white-500">{detailUnits}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Building area
+                          </dt>
+                          <dd className="text-lg text-floral_white-500">{detailBuildingArea}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Lot area
+                          </dt>
+                          <dd className="text-lg text-floral_white-500">{detailLotArea}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Zoning district
+                          </dt>
+                          <dd className="text-lg text-floral_white-500">{detailZoningDistrict}</dd>
+                        </div>
+                        <div>
+                          <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
+                            Land use
+                          </dt>
+                          <dd className="text-lg text-floral_white-500">{data.landuse || '—'}</dd>
+                        </div>
+                      </dl>
                     </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
-                        Floors
-                      </dt>
-                      <dd className="text-lg text-floral_white-500">
-                        {formatNumber(data.numfloors ?? data.floors)}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
-                        Units
-                      </dt>
-                      <dd className="text-lg text-floral_white-500">
-                        {formatNumber(data.unitstotal ?? data.units_total, 'total')} •{' '}
-                        {formatNumber(data.unitsres, 'residential')}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
-                        Zoning
-                      </dt>
-                      <dd className="text-lg text-floral_white-500">
-                        {data.zoning ?? data.zonedist1 ?? '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
-                        Land use
-                      </dt>
-                      <dd className="text-lg text-floral_white-500">
-                        {data.landuse || '—'}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
-                        Building area
-                      </dt>
-                      <dd className="text-lg text-floral_white-500">
-                        {formatNumber(data.bldgarea, 'sf')}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
-                        Lot area
-                      </dt>
-                      <dd className="text-lg text-floral_white-500">
-                        {formatNumber(data.lotarea, 'sf')}
-                      </dd>
-                    </div>
-                  </dl>
+                  </div>
                   <div className="mt-8 space-y-1">
                     <div className="font-semibold text-sm tracking-wide text-dust_grey-300">
                       Sales &amp; Taxes
