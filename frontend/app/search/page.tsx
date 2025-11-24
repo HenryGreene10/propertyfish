@@ -50,6 +50,7 @@ type SearchResponse = {
 
 type ChatTurn = {
   id: string;
+  role?: 'user' | 'assistant' | 'combined';
   user: string;
   assistant: string;
   total: number;
@@ -141,20 +142,27 @@ function loadStoredChatHistory(): ChatTurn[] {
               ? entry.reply
               : '';
         if (!user && !assistant) return null;
-        const total =
-          typeof entry.total === 'number' && Number.isFinite(entry.total)
-            ? entry.total
-            : typeof entry.matches === 'number' && Number.isFinite(entry.matches)
-              ? entry.matches
-              : 0;
+          const total =
+            typeof entry.total === 'number' && Number.isFinite(entry.total)
+              ? entry.total
+              : typeof entry.matches === 'number' && Number.isFinite(entry.matches)
+                ? entry.matches
+                : 0;
         const filters = sanitizeChatFilters(entry.filters);
         const previewRows = toPreviewRows(entry.rows ?? entry.previewRows ?? entry.cards);
+        const role =
+          entry.role === 'user' || entry.role === 'assistant' || entry.role === 'combined'
+            ? entry.role
+            : assistant
+              ? (user ? 'combined' : 'assistant')
+              : 'user';
         const id =
           typeof entry.id === 'string' && entry.id.trim() !== ''
             ? entry.id
             : generateChatTurnId();
         return {
           id,
+          role,
           user,
           assistant,
           total,
@@ -536,6 +544,17 @@ export default function SearchPage() {
 
     setChatLoading(true);
     setChatError(null);
+    const userTurn: ChatTurn = {
+      id: generateChatTurnId(),
+      role: 'user',
+      user: text,
+      assistant: '',
+      total: 0,
+      filters: undefined,
+      rows: [],
+    };
+    setChatHistory((prev) => [...prev, userTurn]);
+    setChatLoading(true);
     const body = {
       message: text,
       borough: activeFilters.borough || null,
@@ -586,6 +605,7 @@ export default function SearchPage() {
       setChatHistory((prev) => {
         const newTurn: ChatTurn = {
           id: generateChatTurnId(),
+          role: 'assistant',
           user: text,
           assistant: assistantMessage,
           total: nextTotal,
@@ -905,6 +925,9 @@ export default function SearchPage() {
                 <>
                   {chatHistory.length > 0 ? (
                     chatHistory.map((turn) => {
+                      const role =
+                        turn.role ??
+                        (turn.user && turn.assistant ? 'combined' : turn.assistant ? 'assistant' : 'user');
                       const filterSummary = formatChatFilters(turn.filters);
                       const matchesLabel = `${turn.total} ${turn.total === 1 ? 'match' : 'matches'}`;
                       const friendlyLine = `I found ${turn.total} ${
@@ -915,64 +938,68 @@ export default function SearchPage() {
                         : filterSummary;
                       return (
                         <div key={turn.id} className="space-y-3">
-                          <div className="flex justify-end">
-                            <div className="max-w-[80%] text-right">
-                              <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
-                                You
-                              </p>
-                              <div className="inline-block rounded-2xl border border-neutral-700 bg-neutral-900/70 px-4 py-2 text-sm text-neutral-100">
-                                {turn.user}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex justify-start">
-                            <div className="max-w-[85%]">
-                              <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
-                                PropertyFish
-                              </p>
-                              <div className="rounded-2xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-neutral-100">
-                                <p className="text-sm text-neutral-100">{friendlyLine}</p>
-                                {assistantContext && (
-                                  <p className="mt-1 text-xs text-neutral-400">
-                                    {assistantContext}
-                                  </p>
-                                )}
-                                {turn.rows.length > 0 && (
-                                  <ul className="mt-3 space-y-2 text-xs text-neutral-300">
-                                    {turn.rows.map((row) => {
-                                      const boroughCode =
-                                        typeof row.borough === 'string'
-                                          ? (row.borough as NonNullable<SearchFilters['borough']>)
-                                          : undefined;
-                                      const boroughName =
-                                        row.borough_full ??
-                                        (boroughCode ? boroughLabels[boroughCode] : undefined) ??
-                                        row.borough;
-                                      const yearBuilt = row.yearbuilt ?? row.year_built;
-                                      return (
-                                        <li
-                                          key={`${turn.id}-${row.bbl}`}
-                                          className="rounded-md border border-neutral-800 bg-neutral-900/70 p-2"
-                                        >
-                                          <div className="text-sm text-neutral-100">
-                                            {row.address ?? 'Unknown address'}
-                                          </div>
-                                          <div className="text-[11px] text-neutral-500">
-                                            {boroughName ?? '—'}
-                                            {yearBuilt ? ` · Built ${yearBuilt}` : ''}
-                                          </div>
-                                        </li>
-                                      );
-                                    })}
-                                  </ul>
-                                )}
-                                <p className="mt-2 text-[11px] text-neutral-600">
-                                  {matchesLabel}
-                                  {filterSummary && <> · {filterSummary}</>}
+                          {(role === 'user' || role === 'combined') && turn.user && (
+                            <div className="flex justify-end">
+                              <div className="max-w-[80%] text-right">
+                                <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                                  You
                                 </p>
+                                <div className="inline-block rounded-2xl border border-neutral-700 bg-neutral-900/70 px-4 py-2 text-sm text-neutral-100">
+                                  {turn.user}
+                                </div>
                               </div>
                             </div>
-                          </div>
+                          )}
+                          {(role === 'assistant' || role === 'combined') && turn.assistant && (
+                            <div className="flex justify-start">
+                              <div className="max-w-[85%]">
+                                <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                                  PropertyFish
+                                </p>
+                                <div className="rounded-2xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-neutral-100">
+                                  <p className="text-sm text-neutral-100">{friendlyLine}</p>
+                                  {assistantContext && (
+                                    <p className="mt-1 text-xs text-neutral-400">
+                                      {assistantContext}
+                                    </p>
+                                  )}
+                                  {turn.rows.length > 0 && (
+                                    <ul className="mt-3 space-y-2 text-xs text-neutral-300">
+                                      {turn.rows.map((row) => {
+                                        const boroughCode =
+                                          typeof row.borough === 'string'
+                                            ? (row.borough as NonNullable<SearchFilters['borough']>)
+                                            : undefined;
+                                        const boroughName =
+                                          row.borough_full ??
+                                          (boroughCode ? boroughLabels[boroughCode] : undefined) ??
+                                          row.borough;
+                                        const yearBuilt = row.yearbuilt ?? row.year_built;
+                                        return (
+                                          <li
+                                            key={`${turn.id}-${row.bbl}`}
+                                            className="rounded-md border border-neutral-800 bg-neutral-900/70 p-2"
+                                          >
+                                            <div className="text-sm text-neutral-100">
+                                              {row.address ?? 'Unknown address'}
+                                            </div>
+                                            <div className="text-[11px] text-neutral-500">
+                                              {boroughName ?? '—'}
+                                              {yearBuilt ? ` · Built ${yearBuilt}` : ''}
+                                            </div>
+                                          </li>
+                                        );
+                                      })}
+                                    </ul>
+                                  )}
+                                  <p className="mt-2 text-[11px] text-neutral-600">
+                                    {matchesLabel}
+                                    {filterSummary && <> · {filterSummary}</>}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     })
