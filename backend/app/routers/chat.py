@@ -16,17 +16,25 @@ if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 
 
+class ChatFilters(BaseModel):
+    q: str | None = None
+    borough: str | None = None
+    year_min: int | None = None
+    sort: str | None = None
+
+
 class ChatRequest(BaseModel):
     message: str
     borough: str | None = None
     year_min: int | None = None
+    previous_filters: ChatFilters | None = None
 
 
 class ChatResponse(BaseModel):
     message: str
     total: int
     rows: list[SearchRow]
-    filters: "ChatFilters"
+    filters: ChatFilters
 
 
 class ParsedFilters(BaseModel):
@@ -36,32 +44,34 @@ class ParsedFilters(BaseModel):
     sort: str | None = None
 
 
-class ChatFilters(BaseModel):
-    q: str | None = None
-    borough: str | None = None
-    year_min: int | None = None
-    sort: str | None = None
-
-
-def parse_filters_with_gemini(message: str) -> ParsedFilters | None:
+def parse_filters_with_gemini(
+    message: str,
+    previous: ChatFilters | None = None,
+) -> ParsedFilters | None:
     """Use Gemini to turn a natural-language message into structured filters."""
     if not GEMINI_API_KEY:
         return None
 
+    previous_json = json.dumps(previous.model_dump()) if previous else "null"
     prompt = f"""
 You are a filter parser for a New York City property search tool.
-Extract intent from the user's message and output STRICT JSON with keys: q, borough, year_min, sort.
-- q: free-text search for address, street, building name, etc. Use None if not provided.
-- borough: one of ["MN","BK","QN","BX","SI"] (Manhattan, Brooklyn, Queens, Bronx, Staten Island). Use None if unclear.
-- year_min: integer minimum year built. Use null if not provided.
-- sort: "permits_desc" for most permits/activity first, "yearbuilt_desc" for newest buildings first, or null.
+Your job is to return STRICT JSON with keys: q, borough, year_min, sort.
+
+Previous filters (JSON): {previous_json}
+User message: {message}
+
+Rules:
+- If previous filters are not null, treat them as the starting point. Only change q, borough, year_min, or sort when the new message clearly changes them. Words such as "those", "them", or "now only" refer to the previous results.
+- q: address, street, or building keyword. Keep the prior q unless a new location/building is clearly stated.
+- borough: one of ["MN","BK","QN","BX","SI"]. Keep the prior borough unless the user names a different borough.
+- year_min: integer minimum year built. Adjust it when the user mentions a minimum year; otherwise keep the previous year_min.
+- sort: "permits_desc" for most active, "yearbuilt_desc" for newest, or null.
+- Always return the FINAL filters after applying the new instructions (not just a diff).
 
 Examples:
-"new buildings in queens" -> {{"q": null, "borough": "QN", "year_min": 2000, "sort": "yearbuilt_desc"}}
-"lots of recent permits in brooklyn" -> {{"q": null, "borough": "BK", "year_min": null, "sort": "permits_desc"}}
-"broadway manhattan after 1990" -> {{"q": "broadway", "borough": "MN", "year_min": 1990, "sort": "permits_desc"}}
+prev={{"q":"10th st","borough":"MN","year_min":null,"sort":null}}, message="now only if they are from 2020" -> {{"q":"10th st","borough":"MN","year_min":2020,"sort":null}}
+prev=null, message="new buildings in queens" -> {{"q":null,"borough":"QN","year_min":2000,"sort":"yearbuilt_desc"}}
 
-User message: {message}
 Respond with JSON only, no prose, no code fences.
 """.strip()
 
@@ -82,17 +92,28 @@ Respond with JSON only, no prose, no code fences.
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_search(payload: ChatRequest, pool=Depends(get_pool)) -> ChatResponse:
+    previous_filters = payload.previous_filters
     q = payload.message
     borough = payload.borough
     year_min = payload.year_min
     sort = None
     order = None
 
-    parsed = parse_filters_with_gemini(payload.message)
+    if previous_filters:
+        if previous_filters.q:
+            q = previous_filters.q
+        if previous_filters.borough:
+            borough = previous_filters.borough
+        if previous_filters.year_min is not None:
+            year_min = previous_filters.year_min
+        if previous_filters.sort:
+            sort = previous_filters.sort
+
+    parsed = parse_filters_with_gemini(payload.message, previous=previous_filters)
     if parsed:
-        if parsed.q:
+        if parsed.q is not None:
             q = parsed.q
-        if parsed.borough:
+        if parsed.borough is not None:
             borough = parsed.borough
         if parsed.year_min is not None:
             year_min = parsed.year_min

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import type { ChatResponse, PropertySummary, SearchFilters } from '@/lib/types';
@@ -51,10 +51,225 @@ type SearchResponse = {
 type ChatTurn = {
   id: string;
   user: string;
-  reply: string;
+  assistant: string;
   total: number;
-  matches: number;
+  filters?: ChatResponse['filters'];
+  rows: PropertySummary[];
 };
+
+const CHAT_HISTORY_KEY = 'pf_chat_history_v1';
+const LAST_RESULTS_KEY = 'pf_last_results_v1';
+
+type CachedFilters = {
+  q: string | null;
+  borough: string | null;
+  year_min: number | null;
+};
+
+type CachedResultsPayload = {
+  filters: CachedFilters;
+  total: number;
+  rows: PropertySummary[];
+};
+
+function generateChatTurnId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `chat-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function sanitizeChatFilters(filters: unknown): ChatResponse['filters'] | undefined {
+  if (!filters || typeof filters !== 'object') {
+    return undefined;
+  }
+  const candidate = filters as ChatResponse['filters'];
+  const q =
+    typeof candidate.q === 'string' && candidate.q.trim() !== '' ? candidate.q : null;
+  const borough =
+    typeof candidate.borough === 'string' && candidate.borough.trim() !== ''
+      ? candidate.borough
+      : null;
+  const year_min =
+    typeof candidate.year_min === 'number' && Number.isFinite(candidate.year_min)
+      ? candidate.year_min
+      : null;
+  const sort =
+    typeof candidate.sort === 'string' && candidate.sort.trim() !== ''
+      ? candidate.sort
+      : null;
+
+  if (q !== null || borough !== null || year_min !== null || sort !== null) {
+    return { q, borough, year_min, sort };
+  }
+  return undefined;
+}
+
+function toPreviewRows(rows: unknown, limit = 3): PropertySummary[] {
+  if (!Array.isArray(rows) || limit <= 0) return [];
+  return rows
+    .slice(0, limit)
+    .map((row) => {
+      if (!row || typeof row !== 'object') return null;
+      const summary = row as PropertySummary;
+      if (
+        typeof summary.bbl !== 'string' ||
+        typeof summary.address !== 'string'
+      ) {
+        return null;
+      }
+      return { ...summary };
+    })
+    .filter((row): row is PropertySummary => Boolean(row));
+}
+
+function loadStoredChatHistory(): ChatTurn[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.sessionStorage.getItem(CHAT_HISTORY_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map((entry: any) => {
+        if (!entry || typeof entry !== 'object') return null;
+        const user = typeof entry.user === 'string' ? entry.user : '';
+        const assistant =
+          typeof entry.assistant === 'string'
+            ? entry.assistant
+            : typeof entry.reply === 'string'
+              ? entry.reply
+              : '';
+        if (!user && !assistant) return null;
+        const total =
+          typeof entry.total === 'number' && Number.isFinite(entry.total)
+            ? entry.total
+            : typeof entry.matches === 'number' && Number.isFinite(entry.matches)
+              ? entry.matches
+              : 0;
+        const filters = sanitizeChatFilters(entry.filters);
+        const previewRows = toPreviewRows(entry.rows ?? entry.previewRows ?? entry.cards);
+        const id =
+          typeof entry.id === 'string' && entry.id.trim() !== ''
+            ? entry.id
+            : generateChatTurnId();
+        return {
+          id,
+          user,
+          assistant,
+          total,
+          filters,
+          rows: previewRows,
+        } as ChatTurn;
+      })
+      .filter((turn): turn is ChatTurn => Boolean(turn));
+  } catch {
+    return [];
+  }
+}
+
+function normalizeQueryValue(value: string | null | undefined) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
+
+function normalizeBoroughValue(value: string | null | undefined) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim().toUpperCase();
+  return trimmed === '' ? null : trimmed;
+}
+
+function normalizeYearValue(value: number | null | undefined) {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
+  }
+  return null;
+}
+
+function toCacheFilters(
+  filters?: Partial<SearchFilters> | ChatResponse['filters'] | null,
+): CachedFilters {
+  if (!filters) {
+    return { q: null, borough: null, year_min: null };
+  }
+  return {
+    q: normalizeQueryValue(filters.q),
+    borough: normalizeBoroughValue(filters.borough),
+    year_min: normalizeYearValue(filters.year_min ?? null),
+  };
+}
+
+function cacheFiltersMatch(
+  cached: CachedFilters,
+  filters: Partial<SearchFilters>,
+): boolean {
+  const target = toCacheFilters(filters);
+  return (
+    (cached.q ?? null) === (target.q ?? null) &&
+    (cached.borough ?? null) === (target.borough ?? null) &&
+    (cached.year_min ?? null) === (target.year_min ?? null)
+  );
+}
+
+function loadResultsCache(): CachedResultsPayload | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.sessionStorage.getItem(LAST_RESULTS_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      typeof parsed.total !== 'number' ||
+      !Array.isArray(parsed.rows) ||
+      !parsed.filters ||
+      typeof parsed.filters !== 'object'
+    ) {
+      return null;
+    }
+    const filters = parsed.filters as Partial<CachedFilters>;
+    return {
+      filters: {
+        q: normalizeQueryValue(filters.q ?? null),
+        borough: normalizeBoroughValue(filters.borough ?? null),
+        year_min: normalizeYearValue(filters.year_min ?? null),
+      },
+      total: parsed.total,
+      rows: parsed.rows as PropertySummary[],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function saveResultsCache(
+  rows: PropertySummary[],
+  total: number,
+  filters?: Partial<SearchFilters> | ChatResponse['filters'],
+) {
+  if (typeof window === 'undefined') return;
+  try {
+    const payload: CachedResultsPayload = {
+      filters: toCacheFilters(filters ?? null),
+      total,
+      rows,
+    };
+    window.sessionStorage.setItem(LAST_RESULTS_KEY, JSON.stringify(payload));
+  } catch {
+    // ignore cache write errors
+  }
+}
+
+function extractUrlFilters(searchParams: URLSearchParams | ReadonlyURLSearchParams | null) {
+  const urlQ = (searchParams?.get('q') ?? '').trim();
+  const urlBorough = searchParams?.get('borough') ?? '';
+  const rawYear = searchParams?.get('year_min') ?? searchParams?.get('year') ?? '';
+  const parsedYear = rawYear !== '' ? Number(rawYear) : undefined;
+  const yearValue =
+    typeof parsedYear === 'number' && Number.isFinite(parsedYear) ? parsedYear : undefined;
+  return { urlQ, urlBorough, yearValue };
+}
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? 'http://localhost:8000';
 const PAGE_SIZE = 24;
@@ -217,29 +432,27 @@ export default function SearchPage() {
     offset: 0,
   });
   const [chatQuestion, setChatQuestion] = useState<string>('');
-  const [chatAnswer, setChatAnswer] = useState<string | null>(null);
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
-  const [chatTotal, setChatTotal] = useState<number | null>(null);
   const [chatRows, setChatRows] = useState<PropertySummary[]>([]);
-  const [chatHistory, setChatHistory] = useState<ChatTurn[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const raw = window.sessionStorage.getItem('pf_chat_history_v1');
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed as ChatTurn[];
-    } catch {
-      return [];
-    }
+  const [chatHistory, setChatHistory] = useState<ChatTurn[]>(loadStoredChatHistory);
+  const [chatContextFilters, setChatContextFilters] = useState<
+    ChatResponse['filters'] | undefined
+  >(() => {
+    const history = loadStoredChatHistory();
+    return history.length > 0 ? history[history.length - 1].filters : undefined;
   });
+  const [hasMounted, setHasMounted] = useState(false);
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const cacheAttemptedRef = useRef(false);
+  const cacheAppliedRef = useRef(false);
 
   const handleApply = async (
     nextFilters: Partial<SearchFilters>,
-    options?: { updateUrl?: boolean },
+    options?: { updateUrl?: boolean; preserveResults?: boolean },
   ) => {
     const shouldUpdateUrl = options?.updateUrl ?? true;
+    const shouldPreserveResults = options?.preserveResults ?? false;
     const rawYear = nextFilters.year_min;
     const parsedYear =
       typeof rawYear === 'string'
@@ -265,11 +478,13 @@ export default function SearchPage() {
 
     setIsLoading(true);
     setError(null);
-    setResults([]);
-    setTotal(null);
     setPage(0);
-    setLimit(appliedLimit);
     setIsEnd(false);
+    if (!shouldPreserveResults) {
+      setResults([]);
+      setTotal(null);
+    }
+    setLimit(appliedLimit);
     setActiveFilters(baseFilters);
 
     const url = `${API_BASE}/api/search${qs ? `?${qs}` : ''}`;
@@ -288,6 +503,7 @@ export default function SearchPage() {
       setPage(0);
       setIsEnd(mapped.length >= data.total);
       setHasSearched(true);
+      saveResultsCache(mapped, data.total, baseFilters);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to fetch search results';
@@ -324,6 +540,7 @@ export default function SearchPage() {
       message: text,
       borough: activeFilters.borough || null,
       year_min: activeFilters.year_min ?? null,
+      previous_filters: chatContextFilters ?? null,
     };
 
     try {
@@ -336,6 +553,7 @@ export default function SearchPage() {
         throw new Error(`Chat request failed with status ${res.status}`);
       }
       const data: ChatResponse = await res.json();
+      const assistantMessage = typeof data.message === 'string' ? data.message : '';
       const mappedRows: PropertySummary[] = Array.isArray(data.rows)
         ? data.rows.map((row: any) => ({ ...row }))
         : [];
@@ -343,7 +561,9 @@ export default function SearchPage() {
         typeof data.total === 'number' && Number.isFinite(data.total)
           ? data.total
           : mappedRows.length;
+      const sanitizedFilters = sanitizeChatFilters(data.filters);
       const filtersFromChat = data.filters || {};
+      const previewRows = toPreviewRows(mappedRows);
       const nextFilters: Partial<SearchFilters> = {
         q: filtersFromChat.q ?? text,
         borough: (filtersFromChat.borough as SearchFilters['borough']) ?? '',
@@ -360,23 +580,21 @@ export default function SearchPage() {
       setHasSearched(true);
       setError(null);
       setActiveFilters(nextFilters);
-      setChatAnswer(typeof data.message === 'string' ? data.message : null);
-      setChatTotal(nextTotal);
       setChatRows(mappedRows);
-      setChatQuestion(text);
+      setChatContextFilters(sanitizedFilters);
+      setChatQuestion('');
       setChatHistory((prev) => {
         const newTurn: ChatTurn = {
-          id:
-            typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-              ? crypto.randomUUID()
-              : String(Date.now()),
+          id: generateChatTurnId(),
           user: text,
-          reply: data.message,
+          assistant: assistantMessage,
           total: nextTotal,
-          matches: nextTotal,
+          filters: sanitizedFilters,
+          rows: previewRows,
         };
         return [...prev, newTurn];
       });
+      saveResultsCache(mappedRows, nextTotal, nextFilters);
 
       const params = buildSearchParams(nextFilters);
       const qs = params.toString();
@@ -390,13 +608,38 @@ export default function SearchPage() {
   };
 
   useEffect(() => {
-    if (!searchParams) return;
+    if (!hasMounted) return;
+    if (cacheAttemptedRef.current) return;
+    cacheAttemptedRef.current = true;
+    const { urlQ, urlBorough, yearValue } = extractUrlFilters(searchParams ?? null);
+    const targetFilters: Partial<SearchFilters> = {
+      q: urlQ || undefined,
+      borough: (urlBorough || undefined) as SearchFilters['borough'] | undefined,
+      year_min: yearValue,
+    };
+    const cached = loadResultsCache();
+    if (cached && cacheFiltersMatch(cached.filters, targetFilters)) {
+      cacheAppliedRef.current = true;
+      setResults(cached.rows);
+      setTotal(cached.total);
+      setHasSearched(true);
+      setIsEnd(cached.rows.length >= cached.total);
+      setError(null);
+      setActiveFilters((prev) => ({
+        ...prev,
+        q: cached.filters.q ?? undefined,
+        borough: (cached.filters.borough as SearchFilters['borough']) ?? undefined,
+        year_min: cached.filters.year_min ?? undefined,
+        limit: PAGE_SIZE,
+        offset: 0,
+      }));
+    }
+  }, [hasMounted, searchParams]);
 
-    const urlQ = (searchParams.get('q') ?? '').trim();
-    const urlBorough = searchParams.get('borough') ?? '';
-    const rawYear = searchParams.get('year_min') ?? searchParams.get('year') ?? '';
-    const parsedYear = rawYear !== '' ? Number(rawYear) : undefined;
-    const yearValue = Number.isFinite(parsedYear) ? parsedYear : undefined;
+  useEffect(() => {
+    if (!hasMounted || !searchParams) return;
+
+    const { urlQ, urlBorough, yearValue } = extractUrlFilters(searchParams);
 
     const hasParams = urlQ !== '' || urlBorough !== '' || typeof yearValue === 'number';
     if (!hasParams) return;
@@ -413,6 +656,10 @@ export default function SearchPage() {
       return;
     }
 
+    const preserveResults = cacheAppliedRef.current;
+    if (preserveResults) {
+      cacheAppliedRef.current = false;
+    }
     handleApply(
       {
         q: urlQ || undefined,
@@ -421,18 +668,44 @@ export default function SearchPage() {
         limit: PAGE_SIZE,
         offset: 0,
       },
-      { updateUrl: false },
+      { updateUrl: false, preserveResults },
     );
-  }, [searchParams, activeFilters.borough, activeFilters.q, activeFilters.year_min, hasSearched]);
+  }, [
+    hasMounted,
+    searchParams,
+    activeFilters.borough,
+    activeFilters.q,
+    activeFilters.year_min,
+    hasSearched,
+  ]);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      window.sessionStorage.setItem('pf_chat_history_v1', JSON.stringify(chatHistory));
+      window.sessionStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
     } catch {
       // ignore write errors
     }
   }, [chatHistory]);
+
+  useEffect(() => {
+    if (chatHistory.length === 0) {
+      setChatContextFilters(undefined);
+      return;
+    }
+    setChatContextFilters(chatHistory[chatHistory.length - 1].filters);
+  }, [chatHistory]);
+
+  useEffect(() => {
+    if (!hasMounted) return;
+    const container = transcriptRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
+  }, [chatHistory, chatLoading, hasMounted]);
 
   const fieldClasses =
     'w-full rounded-lg border border-charcoal_brown-600 bg-carbon_black-300 px-3 py-2 text-sm text-floral_white placeholder:text-dust_grey-500 focus:border-spicy_paprika-500 focus:ring-2 focus:ring-spicy_paprika-500 focus:outline-none transition';
@@ -443,6 +716,26 @@ export default function SearchPage() {
     BK: 'Brooklyn',
     QN: 'Queens',
     SI: 'Staten Island',
+  };
+
+  const formatChatFilters = (filters?: ChatResponse['filters']) => {
+    if (!filters) return '';
+    const parts: string[] = [];
+    const queryText = typeof filters.q === 'string' ? filters.q.trim() : '';
+    if (queryText) {
+      parts.push(`q="${queryText}"`);
+    }
+    const boroughCode = filters.borough;
+    if (boroughCode && typeof boroughCode === 'string') {
+      const label =
+        boroughLabels[boroughCode as NonNullable<SearchFilters['borough']>] ?? boroughCode;
+      parts.push(`borough=${label}`);
+    }
+    if (typeof filters.year_min === 'number' && Number.isFinite(filters.year_min)) {
+      parts.push(`year ≥ ${filters.year_min}`);
+    }
+
+    return parts.length > 0 ? `Filters → ${parts.join(', ')}` : '';
   };
 
   const activeQuery = typeof activeFilters.q === 'string' ? activeFilters.q.trim() : '';
@@ -462,6 +755,11 @@ export default function SearchPage() {
     }
     return `Showing ${results.length} of ${total} properties matching your filters`;
   })();
+
+  const latestChatTurn =
+    chatHistory.length > 0 ? chatHistory[chatHistory.length - 1] : null;
+  const previewChatRows = chatRows.slice(0, 5);
+  const previewCount = previewChatRows.length;
 
   const handleLoadMore = async () => {
     if (isLoading || isLoadingMore || isEnd || total === null) return;
@@ -486,15 +784,13 @@ export default function SearchPage() {
       }
       const data = toSearchResponse(await res.json());
       const mapped = data.items.map(mapToCard);
-      setTotal((prev) => data.total ?? prev ?? mapped.length);
-      setResults((prev) => {
-        const combined = [...prev, ...mapped];
-        return combined;
-      });
-      const nextTotal = data.total ?? total ?? results.length + mapped.length;
-      const combinedLength = results.length + mapped.length;
+      const combinedRows = [...results, ...mapped];
+      const nextTotal = data.total ?? total ?? combinedRows.length;
+      setTotal(nextTotal);
+      setResults(combinedRows);
       setPage(nextPage);
-      setIsEnd(combinedLength >= nextTotal);
+      setIsEnd(combinedRows.length >= nextTotal);
+      saveResultsCache(combinedRows, nextTotal, activeFilters);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Unable to fetch search results';
@@ -588,7 +884,7 @@ export default function SearchPage() {
               type="text"
               value={chatQuestion}
               onChange={(e) => setChatQuestion(e.target.value)}
-              placeholder="e.g. new buildings on Broadway with lots of recent permits"
+              placeholder="Ask about buildings or areas you care about"
               className="flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:outline-none focus:ring-1 focus:ring-neutral-400"
             />
             <button
@@ -596,54 +892,146 @@ export default function SearchPage() {
               disabled={chatLoading}
               className="rounded-md bg-neutral-100 px-4 py-2 text-sm font-medium text-black disabled:opacity-60"
             >
-              {chatLoading ? 'Asking…' : 'Ask'}
+              {chatLoading ? 'Thinking…' : 'Ask'}
             </button>
           </form>
           {chatError && <p className="mt-2 text-xs text-red-400">{chatError}</p>}
-          {chatAnswer && (
-            <div className="mt-3 space-y-2 text-sm">
-              <div className="text-dust_grey-400">
-                <span className="mr-1 font-semibold">You:</span>
-                {chatQuestion}
-              </div>
-              <div className="text-floral_white-500">
-                <span className="mr-1 font-semibold">PropertyFish:</span>
-                {chatAnswer}
-              </div>
-              {typeof chatTotal === 'number' && (
-                <p className="text-xs text-neutral-500">
-                  Showing up to {Math.min(chatRows.length, 5)} of {chatTotal} matches.
-                </p>
+          <div className="mt-4">
+            <div
+              ref={transcriptRef}
+              className="max-h-[420px] space-y-4 overflow-y-auto pr-1 text-sm text-neutral-200"
+            >
+              {hasMounted ? (
+                <>
+                  {chatHistory.length > 0 ? (
+                    chatHistory.map((turn) => {
+                      const filterSummary = formatChatFilters(turn.filters);
+                      const matchesLabel = `${turn.total} ${turn.total === 1 ? 'match' : 'matches'}`;
+                      const friendlyLine = `I found ${turn.total} ${
+                        turn.total === 1 ? 'property' : 'properties'
+                      } that match your request.`;
+                      const assistantContext = turn.assistant?.trim()
+                        ? turn.assistant.trim()
+                        : filterSummary;
+                      return (
+                        <div key={turn.id} className="space-y-3">
+                          <div className="flex justify-end">
+                            <div className="max-w-[80%] text-right">
+                              <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                                You
+                              </p>
+                              <div className="inline-block rounded-2xl border border-neutral-700 bg-neutral-900/70 px-4 py-2 text-sm text-neutral-100">
+                                {turn.user}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-start">
+                            <div className="max-w-[85%]">
+                              <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                                PropertyFish
+                              </p>
+                              <div className="rounded-2xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-neutral-100">
+                                <p className="text-sm text-neutral-100">{friendlyLine}</p>
+                                {assistantContext && (
+                                  <p className="mt-1 text-xs text-neutral-400">
+                                    {assistantContext}
+                                  </p>
+                                )}
+                                {turn.rows.length > 0 && (
+                                  <ul className="mt-3 space-y-2 text-xs text-neutral-300">
+                                    {turn.rows.map((row) => {
+                                      const boroughCode =
+                                        typeof row.borough === 'string'
+                                          ? (row.borough as NonNullable<SearchFilters['borough']>)
+                                          : undefined;
+                                      const boroughName =
+                                        row.borough_full ??
+                                        (boroughCode ? boroughLabels[boroughCode] : undefined) ??
+                                        row.borough;
+                                      const yearBuilt = row.yearbuilt ?? row.year_built;
+                                      return (
+                                        <li
+                                          key={`${turn.id}-${row.bbl}`}
+                                          className="rounded-md border border-neutral-800 bg-neutral-900/70 p-2"
+                                        >
+                                          <div className="text-sm text-neutral-100">
+                                            {row.address ?? 'Unknown address'}
+                                          </div>
+                                          <div className="text-[11px] text-neutral-500">
+                                            {boroughName ?? '—'}
+                                            {yearBuilt ? ` · Built ${yearBuilt}` : ''}
+                                          </div>
+                                        </li>
+                                      );
+                                    })}
+                                  </ul>
+                                )}
+                                <p className="mt-2 text-[11px] text-neutral-600">
+                                  {matchesLabel}
+                                  {filterSummary && <> · {filterSummary}</>}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    !chatLoading && (
+                      <p className="text-center text-xs text-neutral-500">
+                        Start a conversation to have PropertyFish search for you.
+                      </p>
+                    )
+                  )}
+                  {chatLoading && (
+                    <div className="space-y-3">
+                      <div className="flex justify-start">
+                        <div className="max-w-[85%]">
+                          <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                            PropertyFish
+                          </p>
+                          <div className="rounded-2xl border border-neutral-800 bg-neutral-950 px-4 py-3 text-neutral-100">
+                            <p className="text-sm text-neutral-100">PropertyFish is searching…</p>
+                            <div className="mt-2 flex items-center gap-1">
+                              {[0, 1, 2].map((dot) => (
+                                <span
+                                  key={dot}
+                                  className="h-2 w-2 rounded-full bg-neutral-400 animate-bounce"
+                                  style={{
+                                    animationDelay: `${dot * 0.15}s`,
+                                    animationDuration: '1s',
+                                  }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="py-6 text-center text-xs text-neutral-600">
+                  Loading conversation…
+                </div>
               )}
             </div>
-          )}
-          {chatHistory.length > 0 && (
-            <div className="mt-4 space-y-3 text-xs text-neutral-300">
-              {chatHistory.map((turn) => (
-                <div key={turn.id} className="rounded-md border border-neutral-800 bg-neutral-950 p-3">
-                  <div className="text-neutral-500">
-                    <span className="font-semibold text-neutral-400">You:</span> {turn.user}
-                  </div>
-                  <div className="mt-1 text-neutral-200">
-                    <span className="font-semibold text-neutral-100">PropertyFish:</span> {turn.reply}
-                  </div>
-                  <div className="mt-1 text-[11px] text-neutral-600">
-                    {(turn.matches ?? turn.total) ?? 0} matches
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          </div>
           {chatRows.length > 0 && (
-            <ul className="mt-3 space-y-1 text-xs text-neutral-400">
-              {chatRows.slice(0, 5).map((row) => (
-                <li key={row.bbl}>
-                  <span className="text-neutral-200">{row.address ?? 'Unknown address'}</span>
-                  {row.borough_full && <> · {row.borough_full}</>}
-                  {row.yearbuilt && <> · Built {row.yearbuilt}</>}
-                </li>
-              ))}
-            </ul>
+            <div className="mt-3 text-xs text-neutral-400">
+              <p className="mb-1 text-[11px] uppercase tracking-wide text-neutral-500">
+                Showing up to {previewCount} of {latestChatTurn?.total ?? chatRows.length} matches
+              </p>
+              <ul className="space-y-1">
+                {previewChatRows.map((row) => (
+                  <li key={row.bbl}>
+                    <span className="text-neutral-200">{row.address ?? 'Unknown address'}</span>
+                    {row.borough_full && <> · {row.borough_full}</>}
+                    {row.yearbuilt && <> · Built {row.yearbuilt}</>}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
         {shouldShowSummary && (
