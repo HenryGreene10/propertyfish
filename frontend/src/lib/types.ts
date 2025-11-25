@@ -21,6 +21,7 @@ export interface SearchResultRow {
   borough_full?: string | null;
   permit_count_12m?: number | null;
   last_permit_date?: string | null;
+  // Optional building stats returned by /api/search
   yearbuilt?: number | null;
   numfloors?: number | null;
   unitsres?: number | null;

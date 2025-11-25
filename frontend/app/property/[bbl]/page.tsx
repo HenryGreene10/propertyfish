@@ -46,20 +46,24 @@ function formatDate(value?: string | null) {
 function formatUnitsDetail(residential?: number | null, total?: number | null) {
   const resValue =
     typeof residential === 'number' && Number.isFinite(residential)
-      ? residential.toLocaleString()
+      ? Math.trunc(residential).toLocaleString()
       : null;
   const totalValue =
     typeof total === 'number' && Number.isFinite(total)
-      ? total.toLocaleString()
+      ? Math.trunc(total).toLocaleString()
       : null;
   if (resValue && totalValue) {
     return `${resValue} res / ${totalValue} total`;
   }
-  if (resValue) {
-    return `${resValue} res`;
-  }
-  if (totalValue) {
-    return `${totalValue} total`;
+  return '—';
+}
+
+function formatText(value?: string | null) {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
   }
   return '—';
 }
@@ -143,7 +147,8 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
   const detailLotArea = data
     ? formatNumber((data.lotarea ?? data.lot_sqft) ?? null, 'sf')
     : '—';
-  const detailZoningDistrict = data ? data.zonedist1 ?? data.zoning ?? '—' : '—';
+  const detailZoningDistrict = data ? formatText(data.zonedist1 ?? data.zoning ?? null) : '—';
+  const detailLandUse = data ? formatText(data.landuse ?? null) : '—';
 
   return (
     <div className="min-h-screen bg-carbon_black text-floral_white-500">
@@ -231,7 +236,7 @@ export default function PropertyDetailPage({ params }: PropertyDetailPageProps) 
                           <dt className="text-xs uppercase tracking-wide text-dust_grey-500">
                             Land use
                           </dt>
-                          <dd className="text-lg text-floral_white-500">{data.landuse || '—'}</dd>
+                          <dd className="text-lg text-floral_white-500">{detailLandUse}</dd>
                         </div>
                       </dl>
                     </div>

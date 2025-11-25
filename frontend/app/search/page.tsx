@@ -367,6 +367,51 @@ function preferString(...values: Array<string | null | undefined>) {
   return null;
 }
 
+const DASH = '—';
+
+function isFiniteNumber(value: number | null | undefined): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function formatYearBuiltDisplay(value?: number | null): string {
+  return isFiniteNumber(value) ? String(Math.trunc(value)) : DASH;
+}
+
+function formatUnitsDisplay(residential?: number | null, total?: number | null): string {
+  if (isFiniteNumber(residential) && isFiniteNumber(total)) {
+    return `${Math.trunc(residential).toLocaleString()}/${Math.trunc(total).toLocaleString()}`;
+  }
+  return DASH;
+}
+
+function formatCountDisplay(value?: number | null): string {
+  return isFiniteNumber(value) ? Math.trunc(value).toLocaleString() : DASH;
+}
+
+function formatDateDisplay(value?: string | null): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  return DASH;
+}
+
+function formatTextDisplay(value?: string | null): string {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+  return DASH;
+}
+
+function formatAreaDisplay(value?: number | null): string {
+  return isFiniteNumber(value) ? `${Math.trunc(value).toLocaleString()} sf` : DASH;
+}
+
 function mapToCard(item: SearchItem): PropertySummary {
   return {
     bbl: item.bbl,
@@ -1060,47 +1105,47 @@ export default function SearchPage() {
           <div className="mb-4 text-sm text-dust_grey-400">{summaryText}</div>
         )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {results.map((item) => (
-            <Link
-              key={item.bbl}
-              href={`/property/${encodeURIComponent(item.bbl)}`}
-              className="block h-full"
-            >
-              <div className="h-full cursor-pointer rounded-lg border border-charcoal_brown-600 bg-charcoal_brown-400 p-4 shadow-sm transition hover:border-spicy_paprika-500 hover:shadow-md">
-                <div className="mb-3 flex h-28 w-full items-center justify-center rounded-md bg-neutral-800/80 text-[10px] uppercase tracking-wide text-neutral-500">
-                  Photo coming soon
-                </div>
-                <div className="text-sm font-semibold uppercase tracking-wide text-floral_white-500">
-                  {item.address ?? 'Unknown address'}
-                </div>
-                <div className="mt-1 text-xs text-dust_grey-400">
-                  {(item.borough_full ?? '—') + ' · ' + (item.zonedist1 ?? 'Zoning —')}
-                </div>
-                <div className="mt-2 text-xs text-dust_grey-300">
-                  Year built: {item.yearbuilt ?? '—'} · Units: {item.unitsres ?? 0}/
-                  {item.unitstotal ?? 0}
-                </div>
-                <div className="mt-2 text-xs text-dust_grey-300">
-                  Permits (12m): {item.permit_count_12m ?? 0} · Last: {item.last_permit_date ?? '—'}
-                </div>
-                <div className="mt-2 text-xs text-dust_grey-300">
-                  Zoning: {item.zonedist1 ?? '—'} · Land use: {item.landuse ?? '—'}
-                </div>
-                {(typeof item.bldgarea === 'number' && Number.isFinite(item.bldgarea)) ||
-                (typeof item.lotarea === 'number' && Number.isFinite(item.lotarea)) ? (
-                  <div className="mt-2 text-xs text-dust_grey-300">
-                    Area: {typeof item.bldgarea === 'number' && Number.isFinite(item.bldgarea)
-                      ? `${item.bldgarea.toLocaleString()} sf`
-                      : '—'}{' '}
-                    · Lot:{' '}
-                    {typeof item.lotarea === 'number' && Number.isFinite(item.lotarea)
-                      ? `${item.lotarea.toLocaleString()} sf`
-                      : '—'}
+          {results.map((item) => {
+            const yearBuiltText = formatYearBuiltDisplay(item.yearbuilt);
+            const unitsText = formatUnitsDisplay(item.unitsres, item.unitstotal);
+            const permitCountText = formatCountDisplay(item.permit_count_12m);
+            const lastPermitText = formatDateDisplay(item.last_permit_date);
+            const zoningText = formatTextDisplay(item.zonedist1);
+            const landUseText = formatTextDisplay(item.landuse);
+            const buildingAreaText = formatAreaDisplay(item.bldgarea);
+            const lotAreaText = formatAreaDisplay(item.lotarea);
+            return (
+              <Link
+                key={item.bbl}
+                href={`/property/${encodeURIComponent(item.bbl)}`}
+                className="block h-full"
+              >
+                <div className="h-full cursor-pointer rounded-lg border border-charcoal_brown-600 bg-charcoal_brown-400 p-4 shadow-sm transition hover:border-spicy_paprika-500 hover:shadow-md">
+                  <div className="mb-3 flex h-28 w-full items-center justify-center rounded-md bg-neutral-800/80 text-[10px] uppercase tracking-wide text-neutral-500">
+                    Photo coming soon
                   </div>
-                ) : null}
-              </div>
-            </Link>
-          ))}
+                  <div className="text-sm font-semibold uppercase tracking-wide text-floral_white-500">
+                    {item.address ?? 'Unknown address'}
+                  </div>
+                  <div className="mt-1 text-xs text-dust_grey-400">
+                    {(item.borough_full ?? '—') + ' · ' + (item.zonedist1 ?? 'Zoning —')}
+                  </div>
+                  <div className="mt-2 text-xs text-dust_grey-300">
+                    Year built: {yearBuiltText} · Units: {unitsText}
+                  </div>
+                  <div className="mt-2 text-xs text-dust_grey-300">
+                    Permits (12m): {permitCountText} · Last: {lastPermitText}
+                  </div>
+                  <div className="mt-2 text-xs text-dust_grey-300">
+                    Zoning: {zoningText} · Land use: {landUseText}
+                  </div>
+                  <div className="mt-2 text-xs text-dust_grey-300">
+                    Area: {buildingAreaText} · Lot: {lotAreaText}
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
         </div>
         {!isLoading && hasSearched && !error && results.length === 0 && (
           <p className="mt-8 text-sm text-dust_grey-500">
